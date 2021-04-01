@@ -61,7 +61,6 @@ CTFLAG:
         HasMinibib: true
     -HitShape:
     -Health:
-    -Explodes:
     -Selectable:
     -Targetable:
     MapEditorData:

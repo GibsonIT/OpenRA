@@ -15,7 +15,6 @@ Player:
 	ClassicProductionQueue@Infantry:
 		Type: Infantry
 		DisplayOrder: 2
-		LowPowerModifier: 300
 		ReadyAudio: UnitReady
 		BlockedAudio: NoBuild
 		LimitedAudio: BuildingInProgress
@@ -26,16 +25,12 @@ Player:
 	PlaceBuilding:
 		NewOptionsNotification: NewOptions
 		CannotPlaceNotification: BuildingCannotPlaceAudio
-	SupportPowerManager:
 	ScriptTriggers:
 	MissionObjectives:
 		WinNotification: Win
 		LoseNotification: Lose
 		LeaveNotification: Leave
 	ConquestVictoryConditions:
-	PowerManager:
-		SpeechNotification: LowPower
-	AllyRepair:
 	PlayerResources:
 		InsufficientFundsNotification: InsufficientFunds
 		CashTickUpNotification: CashTickUp

@@ -25,9 +25,3 @@ E1:
 		MuzzleSequence: garrison-muzzle
 	WithInfantryBody:
 		DefaultAttackSequence: shoot
-		RequiresCondition: !parachute
-	WithInfantryBody@PARACHUTE:
-		StandSequences: parachute
-		RequiresCondition: parachute
-	ProducibleWithLevel:
-		Prerequisites: barracks.upgraded

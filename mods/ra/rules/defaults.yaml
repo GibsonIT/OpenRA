@@ -1,8 +1,6 @@
 ^ExistsInWorld:
 	AppearsOnRadar:
 	CombatDebugOverlay:
-	GivesExperience:
-		PlayerExperienceModifier: 1
 	ScriptTriggers:
 	RenderDebugState:
 
@@ -43,135 +41,6 @@
 		Type: Rectangle
 			TopLeft: -1536, -1024
 			BottomRight: 1536, 1024
-
-^GainsExperience:
-	GainsExperience:
-		LevelUpNotification: LevelUp
-		Conditions:
-			200: rank-veteran
-			400: rank-veteran
-			800: rank-veteran
-			1600: rank-veteran
-		LevelUpImage: crate-effects
-	GrantCondition@RANK-ELITE:
-		RequiresCondition: rank-veteran >= 4
-		Condition: rank-elite
-	DamageMultiplier@RANK-1:
-		RequiresCondition: rank-veteran == 1
-		Modifier: 95
-	DamageMultiplier@RANK-2:
-		RequiresCondition: rank-veteran == 2
-		Modifier: 90
-	DamageMultiplier@RANK-3:
-		RequiresCondition: rank-veteran == 3
-		Modifier: 85
-	DamageMultiplier@RANK-ELITE:
-		RequiresCondition: rank-elite
-		Modifier: 75
-	FirepowerMultiplier@RANK-1:
-		RequiresCondition: rank-veteran == 1
-		Modifier: 105
-	FirepowerMultiplier@RANK-2:
-		RequiresCondition: rank-veteran == 2
-		Modifier: 110
-	FirepowerMultiplier@RANK-3:
-		RequiresCondition: rank-veteran == 3
-		Modifier: 120
-	FirepowerMultiplier@RANK-ELITE:
-		RequiresCondition: rank-elite
-		Modifier: 130
-	SpeedMultiplier@RANK-1:
-		RequiresCondition: rank-veteran == 1
-		Modifier: 105
-	SpeedMultiplier@RANK-2:
-		RequiresCondition: rank-veteran == 2
-		Modifier: 110
-	SpeedMultiplier@RANK-3:
-		RequiresCondition: rank-veteran == 3
-		Modifier: 120
-	SpeedMultiplier@RANK-ELITE:
-		RequiresCondition: rank-elite
-		Modifier: 140
-	ReloadDelayMultiplier@RANK-1:
-		RequiresCondition: rank-veteran == 1
-		Modifier: 95
-	ReloadDelayMultiplier@RANK-2:
-		RequiresCondition: rank-veteran == 2
-		Modifier: 90
-	ReloadDelayMultiplier@RANK-3:
-		RequiresCondition: rank-veteran == 3
-		Modifier: 85
-	ReloadDelayMultiplier@RANK-ELITE:
-		RequiresCondition: rank-elite
-		Modifier: 75
-	ChangesHealth@ELITE:
-		Step: 0
-		PercentageStep: 5
-		Delay: 100
-		StartIfBelow: 100
-		DamageCooldown: 125
-		RequiresCondition: rank-elite
-	WithDecoration@RANK-1:
-		Image: rank
-		Sequence: rank-veteran-1
-		Palette: effect
-		Position: BottomRight
-		Margin: 5, 6
-		ValidRelationships: Ally, Enemy, Neutral
-		RequiresCondition: rank-veteran == 1
-	WithDecoration@RANK-2:
-		Image: rank
-		Sequence: rank-veteran-2
-		Palette: effect
-		Position: BottomRight
-		Margin: 5, 6
-		ValidRelationships: Ally, Enemy, Neutral
-		RequiresCondition: rank-veteran == 2
-	WithDecoration@RANK-3:
-		Image: rank
-		Sequence: rank-veteran-3
-		Palette: effect
-		Position: BottomRight
-		Margin: 5, 6
-		ValidRelationships: Ally, Enemy, Neutral
-		RequiresCondition: rank-veteran == 3
-	WithDecoration@RANK-ELITE:
-		Image: rank
-		Sequence: rank-elite
-		Palette: effect
-		Position: BottomRight
-		Margin: 5, 6
-		ValidRelationships: Ally, Enemy, Neutral
-		RequiresCondition: rank-elite
-
-^InfantryExperienceHospitalOverrides:
-	WithDecoration@RANK-1:
-		BlinkInterval: 32
-		BlinkPatterns:
-			hospitalheal: On, Off
-	WithDecoration@RANK-2:
-		BlinkInterval: 32
-		BlinkPatterns:
-			hospitalheal: On, Off
-	WithDecoration@RANK-3:
-		BlinkInterval: 32
-		BlinkPatterns:
-			hospitalheal: On, Off
-	WithDecoration@RANK-ELITE:
-		BlinkInterval: 32
-		BlinkPatterns:
-			hospitalheal: On, Off
-
-^IronCurtainable:
-	WithColoredOverlay@IRONCURTAIN:
-		RequiresCondition: invulnerability
-	DamageMultiplier@IRONCURTAIN:
-		RequiresCondition: invulnerability
-		Modifier: 0
-	TimedConditionBar:
-		Condition: invulnerability
-	ExternalCondition@INVULNERABILITY:
-		Condition: invulnerability
 
 ^AutoTargetGround:
 	AutoTarget:
@@ -221,11 +90,6 @@
 	AttackMove:
 		AssaultMoveCondition: assault-move
 
-^PlayerHandicaps:
-	HandicapFirepowerMultiplier:
-	HandicapDamageMultiplier:
-	HandicapProductionTimeMultiplier:
-
 ^GlobalBounty:
 	GrantConditionOnPrerequisite@GLOBALBOUNTY:
 		Condition: global-bounty
@@ -235,12 +99,9 @@
 
 ^Infantry:
 	Inherits@1: ^ExistsInWorld
-	Inherits@2: ^GainsExperience
-	Inherits@3: ^InfantryExperienceHospitalOverrides
 	Inherits@4: ^SpriteActor
 	Inherits@bounty: ^GlobalBounty
 	Inherits@selection: ^SelectableCombatUnit
-	Inherits@handicaps: ^PlayerHandicaps
 	Huntable:
 	OwnerLostAction:
 		Action: Kill
@@ -283,9 +144,6 @@
 	Passenger:
 		CargoType: Infantry
 		CargoCondition: disable-experience
-	GainsExperienceMultiplier:
-		Modifier: 0
-		RequiresCondition: disable-experience
 	HiddenUnderFog:
 	ActorLostNotification:
 	GpsDot:
@@ -296,29 +154,6 @@
 	Guardable:
 	Tooltip:
 		GenericName: Soldier
-	ChangesHealth@HOSPITAL:
-		Step: 500
-		Delay: 100
-		StartIfBelow: 100
-		DamageCooldown: 125
-		RequiresCondition: hospitalheal
-	GrantConditionOnPrerequisite@HOSPITAL:
-		Condition: hospital
-		Prerequisites: hosp
-	GrantConditionOnDamageState@HOSPITAL:
-		Condition: damaged
-		ValidDamageStates: Light, Medium, Heavy, Critical
-	GrantCondition@HOSPITAL:
-		RequiresCondition: hospital && damaged
-		Condition: hospitalheal
-	WithDecoration@REDCROSS:
-		Image: pips
-		Sequence: medic
-		Position: BottomRight
-		Margin: 17, 4
-		RequiresCondition: hospitalheal
-		BlinkInterval: 32
-		BlinkPattern: Off, On
 	DeathSounds@NORMAL:
 		DeathTypes: DefaultDeath, BulletDeath, SmallExplosionDeath, ExplosionDeath
 	DeathSounds@BURNED:
@@ -327,26 +162,10 @@
 	DeathSounds@ZAPPED:
 		Voice: Zapped
 		DeathTypes: ElectricityDeath
-	Parachutable:
-		FallRate: 26
-		KilledOnImpassableTerrain: true
-		GroundCorpseSequence: corpse
-		GroundImpactSound: squishy2.aud
-		WaterImpactSound: splash9.aud
-		WaterCorpseSequence: small_splash
-		ParachutingCondition: parachute
 	Cloneable:
 		Types: Infantry
 	Voiced:
 		VoiceSet: GenericVoice
-	WithParachute:
-		ShadowImage: parach-shadow
-		ShadowSequence: idle
-		Image: parach
-		Sequence: idle
-		OpeningSequence: open
-		Offset: 0,0,427
-		RequiresCondition: parachute
 	HitShape:
 		Type: Circle
 			Radius: 128
@@ -396,22 +215,12 @@
 	MapEditorData:
 		Categories: Civilian infantry
 
-^ArmedCivilian:
-	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
-	Armament:
-		Weapon: Pistol
-	AttackFrontal:
-	WithInfantryBody:
-		DefaultAttackSequence: shoot
-
 ^BasicBuilding:
 	Inherits@1: ^ExistsInWorld
-	Inherits@2: ^IronCurtainable
 	Inherits@3: ^SpriteActor
 	Inherits@shape: ^1x1Shape
 	Inherits@bounty: ^GlobalBounty
 	Inherits@selection: ^SelectableBuilding
-	Inherits@handicaps: ^PlayerHandicaps
 	Targetable:
 		TargetTypes: GroundActor, C4, DetonateAttack, Structure
 	Building:
@@ -429,12 +238,6 @@
 		DamagedSounds: kaboom1.aud
 		DestroyedSounds: kaboom22.aud
 	WithSpriteBody:
-	Explodes:
-		Type: Footprint
-		Weapon: BuildingExplode
-		EmptyWeapon: BuildingExplode
-	CaptureNotification:
-	ShakeOnDeath:
 	ProximityCaptor:
 		Types: Building
 	Guardable:
@@ -443,7 +246,6 @@
 	FrozenUnderFogUpdatedByGps:
 	Tooltip:
 		GenericName: Structure
-	Demolishable:
 	MapEditorData:
 		Categories: Building
 	CommandBarBlacklist:
@@ -456,39 +258,12 @@
 	UpdatesPlayerStatistics:
 	GivesBuildableArea:
 		AreaTypes: building, fake
-	RepairableBuilding:
-		RepairStep: 700
-		PlayerExperience: 25
-		RepairingNotification: Repairing
-	EngineerRepairable:
-	AcceptsDeliveredCash:
 	WithMakeAnimation:
 		Condition: build-incomplete
-	CaptureManager:
-		BeingCapturedCondition: being-captured
-	Capturable:
-		RequiresCondition: !build-incomplete
-		Types: building
-	CapturableProgressBar:
-	CapturableProgressBlink:
-	SpawnActorsOnSell:
-		ActorTypes: e1,e1,e1,tecn,tecn2
 	MustBeDestroyed:
 		RequiredForShortGame: true
 	GpsDot:
 		String: Structure
-	Demolishable:
-		Condition: being-demolished
-	Sellable:
-		RequiresCondition: !build-incomplete && !being-captured && !being-demolished
-		SellSounds: cashturn.aud
-		Notification: StructureSold
-	WithBuildingRepairDecoration:
-		Image: allyrepair
-		Sequence: repair
-		Position: Center
-		Palette: player
-		IsPlayerPalette: True
 
 ^TechBuilding:
     Inherits: ^BasicBuilding
@@ -503,17 +278,6 @@
     FrozenUnderFog:
     MapEditorData:
         Categories: Tech building
-
-^InfiltratableFake:
-	Targetable:
-		TargetTypes: GroundActor, Structure, C4, DetonateAttack, SpyInfiltrate
-	InfiltrateForDecoration:
-		Types: SpyInfiltrate
-		Position: Top
-		Margin: 0, 4
-		RequiresSelection: true
-		Image: pips
-		Sequence: tag-fake
 
 ^Selectable:
 	Selectable:
