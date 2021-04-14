@@ -10,11 +10,14 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using OpenRA.Primitives;
 using OpenRA.Support;
+using OpenRA.Traits;
 
 namespace OpenRA
 {
@@ -45,7 +48,7 @@ namespace OpenRA
 		static readonly Func<Type, ITraitContainer> CreateTraitContainer = t =>
 			(ITraitContainer)typeof(TraitContainer<>).MakeGenericType(t).GetConstructor(Type.EmptyTypes).Invoke(null);
 
-		readonly Dictionary<Type, ITraitContainer> traits = new Dictionary<Type, ITraitContainer>();
+		readonly  ConcurrentDictionary<Type, ITraitContainer> traits = new ConcurrentDictionary<Type, ITraitContainer>();
 
 		ITraitContainer InnerGet(Type t)
 		{
@@ -300,7 +303,20 @@ namespace OpenRA
 			{
 				var longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
 				var start = Stopwatch.GetTimestamp();
+
+				//if(actors.Count > 100) traitsInUse();
 				for (var i = 0; i < actors.Count; i++)
+				{
+					var actor = actors[i];
+					var trait = traits[i];
+					if(trait is Shroud)
+						action(actor, trait);
+
+				}
+
+
+				Parallel.For(0, actors.Count, (i) => action(actors[i], traits[i]));
+				/*for (var i = 0; i < actors.Count; i++)
 				{
 					var actor = actors[i];
 					var trait = traits[i];
@@ -313,8 +329,22 @@ namespace OpenRA
 					}
 					else
 						start = current;
+				}*/
+			}
+			public void traitsInUse()
+			{
+				var set = new HashSet<String>();
+				for (var i = 0; i < actors.Count; i++)
+				{
+					set.Add(traits[i].GetType().ToString());
 				}
+
+				var k = set.Count;
+
 			}
 		}
+
 	}
+
+
 }
