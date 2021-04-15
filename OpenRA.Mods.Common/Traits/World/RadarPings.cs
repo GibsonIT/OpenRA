@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using OpenRA.Primitives;
 using OpenRA.Traits;
@@ -28,7 +29,7 @@ namespace OpenRA.Mods.Common.Traits
 
 	public class RadarPings : ITick
 	{
-		public readonly List<RadarPing> Pings = new List<RadarPing>();
+		public readonly ConcurrentDictionary<RadarPing,byte> Pings = new ConcurrentDictionary<RadarPing, byte>();
 		readonly RadarPingsInfo info;
 
 		public WPos? LastPingPosition;
@@ -41,8 +42,8 @@ namespace OpenRA.Mods.Common.Traits
 		void ITick.Tick(Actor self)
 		{
 			foreach (var ping in Pings.ToArray())
-				if (!ping.Tick())
-					Pings.Remove(ping);
+				if (!ping.Key.Tick())
+					Pings.TryRemove(ping);
 		}
 
 		public RadarPing Add(Func<bool> isVisible, WPos position, Color color, int duration)
@@ -53,14 +54,14 @@ namespace OpenRA.Mods.Common.Traits
 			if (ping.IsVisible())
 				LastPingPosition = ping.Position;
 
-			Pings.Add(ping);
+			Pings.TryAdd(ping, (byte)ping.GetHashCode());
 
 			return ping;
 		}
 
 		public void Remove(RadarPing ping)
 		{
-			Pings.Remove(ping);
+			Pings.TryRemove(ping, out _);
 		}
 	}
 
