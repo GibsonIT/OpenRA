@@ -497,6 +497,11 @@ namespace OpenRA
 			TraitDict.ApplyToActorsWithTraitTimed<T>(action, text);
 		}
 
+		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> actors, string text)
+		{
+			TraitDict.ApplyToSuppliedActorsWithTraitTimed<T>(action, actors, text);
+		}
+
 		public IEnumerable<Actor> ActorsHavingTrait<T>()
 		{
 			return TraitDict.ActorsHavingTrait<T>();

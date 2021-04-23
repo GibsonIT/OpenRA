@@ -134,6 +134,11 @@ namespace OpenRA
 			InnerGet<T>().ApplyToAllTimed(action, text);
 		}
 
+		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> actors, string text)
+		{
+			InnerGet<T>().ApplyToSuppliedTimed(action, actors, text);
+		}
+
 		interface ITraitContainer
 		{
 			void Add(Actor actor, object trait);
@@ -302,6 +307,29 @@ namespace OpenRA
 				var start = Stopwatch.GetTimestamp();
 				for (var i = 0; i < actors.Count; i++)
 				{
+					var actor = actors[i];
+					var trait = traits[i];
+					action(actor, trait);
+					var current = Stopwatch.GetTimestamp();
+					if (current - start > longTickThresholdInStopwatchTicks)
+					{
+						PerfTimer.LogLongTick(start, current, text, trait);
+						start = Stopwatch.GetTimestamp();
+					}
+					else
+						start = current;
+				}
+			}
+
+			public void ApplyToSuppliedTimed(Action<Actor, T> action, ICollection<Actor> filterActors, string text)
+			{
+				var longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
+				var start = Stopwatch.GetTimestamp();
+				for (var i = 0; i < actors.Count; i++)
+				{
+					if (!filterActors.Contains(actors[i]))
+						continue;
+
 					var actor = actors[i];
 					var trait = traits[i];
 					action(actor, trait);
