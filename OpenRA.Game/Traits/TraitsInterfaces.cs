@@ -114,6 +114,8 @@ namespace OpenRA.Traits
 	[RequireExplicitImplementation]
 	public interface ITick { void Tick(Actor self); }
 	[RequireExplicitImplementation]
+	public interface IConcurrentTick { void Tick(Actor self, int cloudId); }
+	[RequireExplicitImplementation]
 	public interface ITickRender { void TickRender(WorldRenderer wr, Actor self); }
 	public interface IRender
 	{
@@ -603,5 +605,10 @@ namespace OpenRA.Traits
 	public interface IObservesVariables
 	{
 		IEnumerable<VariableObserver> GetVariableObservers();
+	}
+
+	public interface IActorCloudCreator
+	{
+		IEnumerable<Actor> GetActorsInLocalCloud();
 	}
 }
