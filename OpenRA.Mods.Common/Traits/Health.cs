@@ -59,6 +59,7 @@ namespace OpenRA.Mods.Common.Traits
 		IDamageModifier[] damageModifiersPlayer;
 		INotifyKilled[] notifyKilled;
 		INotifyKilled[] notifyKilledPlayer;
+		object DamageLock = new object();
 
 		[Sync]
 		int hp;
@@ -159,76 +160,79 @@ namespace OpenRA.Mods.Common.Traits
 
 		public void InflictDamage(Actor self, Actor attacker, Damage damage, bool ignoreModifiers)
 		{
-			// Overkill! Don't count extra hits as more kills!
-			if (IsDead)
-				return;
+			lock(DamageLock){ //needs to be done differently
+				// Overkill! Don't count extra hits as more kills!
+				if (IsDead)
+					return;
 
-			var oldState = DamageState;
+				var oldState = DamageState;
 
-			// Apply any damage modifiers
-			if (!ignoreModifiers && damage.Value > 0)
-			{
-				// PERF: Util.ApplyPercentageModifiers has been manually inlined to
-				// avoid unnecessary loop enumerations and allocations
-				var appliedDamage = (decimal)damage.Value;
-				foreach (var dm in damageModifiers)
+				// Apply any damage modifiers
+				if (!ignoreModifiers && damage.Value > 0)
 				{
-					var modifier = dm.GetDamageModifier(attacker, damage);
-					if (modifier != 100)
-						appliedDamage *= modifier / 100m;
+					// PERF: Util.ApplyPercentageModifiers has been manually inlined to
+					// avoid unnecessary loop enumerations and allocations
+					var appliedDamage = (decimal) damage.Value;
+					foreach (var dm in damageModifiers)
+					{
+						var modifier = dm.GetDamageModifier(attacker, damage);
+						if (modifier != 100)
+							appliedDamage *= modifier / 100m;
+					}
+
+					foreach (var dm in damageModifiersPlayer)
+					{
+						var modifier = dm.GetDamageModifier(attacker, damage);
+						if (modifier != 100)
+							appliedDamage *= modifier / 100m;
+					}
+
+					damage = new Damage((int) appliedDamage, damage.DamageTypes);
 				}
 
-				foreach (var dm in damageModifiersPlayer)
+				hp = (hp - damage.Value).Clamp(0, MaxHP);
+
+				var ai = new AttackInfo
 				{
-					var modifier = dm.GetDamageModifier(attacker, damage);
-					if (modifier != 100)
-						appliedDamage *= modifier / 100m;
+					Attacker = attacker,
+					Damage = damage,
+					DamageState = DamageState,
+					PreviousDamageState = oldState,
+				};
+
+				foreach (var nd in notifyDamage)
+					nd.Damaged(self, ai);
+				foreach (var nd in notifyDamagePlayer)
+					nd.Damaged(self, ai);
+
+				if (DamageState != oldState)
+					foreach (var nd in notifyDamageStateChanged)
+						nd.DamageStateChanged(self, ai);
+
+				if (Info.NotifyAppliedDamage && attacker != null && attacker.IsInWorld && !attacker.IsDead)
+				{
+					foreach (var nd in attacker.TraitsImplementing<INotifyAppliedDamage>())
+						nd.AppliedDamage(attacker, self, ai);
+					foreach (var nd in attacker.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
+						nd.AppliedDamage(attacker, self, ai);
 				}
 
-				damage = new Damage((int)appliedDamage, damage.DamageTypes);
-			}
+				if (hp == 0)
+				{
+					foreach (var nd in notifyKilled)
+						nd.Killed(self, ai);
+					foreach (var nd in notifyKilledPlayer)
+						nd.Killed(self, ai);
 
-			hp = (hp - damage.Value).Clamp(0, MaxHP);
+					if (RemoveOnDeath)
+						self.Dispose();
 
-			var ai = new AttackInfo
-			{
-				Attacker = attacker,
-				Damage = damage,
-				DamageState = DamageState,
-				PreviousDamageState = oldState,
-			};
-
-			foreach (var nd in notifyDamage)
-				nd.Damaged(self, ai);
-			foreach (var nd in notifyDamagePlayer)
-				nd.Damaged(self, ai);
-
-			if (DamageState != oldState)
-				foreach (var nd in notifyDamageStateChanged)
-					nd.DamageStateChanged(self, ai);
-
-			if (Info.NotifyAppliedDamage && attacker != null && attacker.IsInWorld && !attacker.IsDead)
-			{
-				foreach (var nd in attacker.TraitsImplementing<INotifyAppliedDamage>())
-					nd.AppliedDamage(attacker, self, ai);
-				foreach (var nd in attacker.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
-					nd.AppliedDamage(attacker, self, ai);
-			}
-
-			if (hp == 0)
-			{
-				foreach (var nd in notifyKilled)
-					nd.Killed(self, ai);
-				foreach (var nd in notifyKilledPlayer)
-					nd.Killed(self, ai);
-
-				if (RemoveOnDeath)
-					self.Dispose();
-
-				if (attacker == null)
-					Log.Write("debug", "{0} #{1} was killed.", self.Info.Name, self.ActorID);
-				else
-					Log.Write("debug", "{0} #{1} killed by {2} #{3}", self.Info.Name, self.ActorID, attacker.Info.Name, attacker.ActorID);
+					if (attacker == null)
+						Log.Write("debug", "{0} #{1} was killed.", self.Info.Name, self.ActorID);
+					else
+						Log.Write("debug", "{0} #{1} killed by {2} #{3}", self.Info.Name, self.ActorID, attacker.Info.Name,
+							attacker.ActorID);
+				}
 			}
 		}
 

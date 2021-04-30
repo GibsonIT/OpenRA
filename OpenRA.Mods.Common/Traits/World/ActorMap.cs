@@ -13,6 +13,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using OpenRA.Primitives;
 using OpenRA.Traits;
 
@@ -183,6 +184,11 @@ namespace OpenRA.Mods.Common.Traits
 		readonly HashSet<Actor> removeActorPosition = new HashSet<Actor>();
 		readonly Predicate<Actor> actorShouldBeRemoved;
 
+
+		ReaderWriterLock rwl = new ReaderWriterLock();
+		const int timeOut = 500;
+
+
 		public WDist LargestActorRadius { get; private set; }
 		public WDist LargestBlockingActorRadius { get; private set; }
 
@@ -209,11 +215,13 @@ namespace OpenRA.Mods.Common.Traits
 
 		void INotifyCreated.Created(Actor self)
 		{
+			rwl.AcquireWriterLock(timeOut);
 			foreach (var cml in self.TraitsImplementing<ICustomMovementLayer>())
 			{
 				CustomMovementLayers[cml.Index] = cml;
 				customInfluence.Add(cml.Index, new CellLayer<InfluenceNode>(self.World.Map));
 			}
+			rwl.ReleaseWriterLock();
 		}
 
 		struct ActorsAtEnumerator : IEnumerator<Actor>
@@ -258,23 +266,34 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			// PERF: Custom enumerator for efficiency - using `yield` is slower.
 			var uv = a.ToMPos(map);
-			if (!influence.Contains(uv))
-				return Enumerable.Empty<Actor>();
+			rwl.AcquireReaderLock(timeOut);
 
-			var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+				if (!influence.Contains(uv))
+					return Enumerable.Empty<Actor>();
+
+				var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+			rwl.ReleaseReaderLock();
+
 			return new ActorsAtEnumerable(layer[uv]);
 		}
 
 		public IEnumerable<Actor> GetActorsAt(CPos a, SubCell sub)
 		{
 			var uv = a.ToMPos(map);
-			if (!influence.Contains(uv))
-				yield break;
+			rwl.AcquireReaderLock(timeOut);
 
-			var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
-			for (var i = layer[uv]; i != null; i = i.Next)
-				if (!i.Actor.Disposed && (i.SubCell == sub || i.SubCell == SubCell.FullCell || sub == SubCell.FullCell || sub == SubCell.Any))
-					yield return i.Actor;
+				if (!influence.Contains(uv))
+					yield break;
+
+				var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+				var list = new List<Actor>();
+
+				for (var i = layer[uv]; i != null; i = i.Next)
+					if (!i.Actor.Disposed && (i.SubCell == sub || i.SubCell == SubCell.FullCell || sub == SubCell.FullCell || sub == SubCell.Any))
+						list.Add(i.Actor);
+
+			rwl.ReleaseReaderLock();
+			foreach (var Actor in list) yield return Actor;
 		}
 
 		public bool HasFreeSubCell(CPos cell, bool checkTransient = true)
@@ -315,10 +334,14 @@ namespace OpenRA.Mods.Common.Traits
 		public bool AnyActorsAt(CPos a)
 		{
 			var uv = a.ToMPos(map);
-			if (!influence.Contains(uv))
-				return false;
+			rwl.AcquireReaderLock(timeOut);
 
-			var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+				if (!influence.Contains(uv))
+					return false;
+
+				var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+			rwl.ReleaseLock();
+
 			return layer[uv] != null;
 		}
 
@@ -326,24 +349,35 @@ namespace OpenRA.Mods.Common.Traits
 		public bool AnyActorsAt(CPos a, SubCell sub, bool checkTransient = true)
 		{
 			var uv = a.ToMPos(map);
-			if (!influence.Contains(uv))
-				return false;
+			rwl.AcquireReaderLock(timeOut);
 
-			var always = sub == SubCell.FullCell || sub == SubCell.Any;
-			var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
-			for (var i = layer[uv]; i != null; i = i.Next)
-			{
-				if (always || i.SubCell == sub || i.SubCell == SubCell.FullCell)
+				if (!influence.Contains(uv))
 				{
-					if (checkTransient)
-						return true;
-
-					var pos = i.Actor.TraitOrDefault<IPositionable>();
-					if (pos == null || !pos.IsLeavingCell(a, i.SubCell))
-						return true;
+					rwl.ReleaseReaderLock();
+					return false;
 				}
-			}
 
+				var always = sub == SubCell.FullCell || sub == SubCell.Any;
+				var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+				for (var i = layer[uv]; i != null; i = i.Next)
+				{
+					if (always || i.SubCell == sub || i.SubCell == SubCell.FullCell)
+					{
+						if (checkTransient)
+						{
+							rwl.ReleaseReaderLock();
+							return true;
+						}
+						var pos = i.Actor.TraitOrDefault<IPositionable>();
+						if (pos == null || !pos.IsLeavingCell(a, i.SubCell))
+						{
+							rwl.ReleaseReaderLock();
+							return true;
+						}
+					}
+				}
+
+			rwl.ReleaseReaderLock();
 			return false;
 		}
 
@@ -351,20 +385,26 @@ namespace OpenRA.Mods.Common.Traits
 		public bool AnyActorsAt(CPos a, SubCell sub, Func<Actor, bool> withCondition)
 		{
 			var uv = a.ToMPos(map);
-			if (!influence.Contains(uv))
-				return false;
+			rwl.AcquireReaderLock(timeOut);
 
-			var always = sub == SubCell.FullCell || sub == SubCell.Any;
-			var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
-			for (var i = layer[uv]; i != null; i = i.Next)
-				if ((always || i.SubCell == sub || i.SubCell == SubCell.FullCell) && !i.Actor.Disposed && withCondition(i.Actor))
-					return true;
+				if (!influence.Contains(uv))
+					return false;
 
+				var always = sub == SubCell.FullCell || sub == SubCell.Any;
+				var layer = a.Layer == 0 ? influence : customInfluence[a.Layer];
+				for (var i = layer[uv]; i != null; i = i.Next)
+					if ((always || i.SubCell == sub || i.SubCell == SubCell.FullCell) && !i.Actor.Disposed && withCondition(i.Actor))
+					{
+						rwl.ReleaseReaderLock();
+						return true;
+					}
+			rwl.ReleaseReaderLock();
 			return false;
 		}
 
 		public void AddInfluence(Actor self, IOccupySpace ios)
 		{
+			rwl.AcquireWriterLock(timeOut);
 			foreach (var c in ios.OccupiedCells())
 			{
 				var uv = c.Cell.ToMPos(map);
@@ -380,10 +420,12 @@ namespace OpenRA.Mods.Common.Traits
 
 				CellUpdated?.Invoke(c.Cell);
 			}
+			rwl.ReleaseWriterLock();
 		}
 
 		public void RemoveInfluence(Actor self, IOccupySpace ios)
 		{
+			rwl.AcquireWriterLock(timeOut);
 			foreach (var c in ios.OccupiedCells())
 			{
 				var uv = c.Cell.ToMPos(map);
@@ -401,6 +443,7 @@ namespace OpenRA.Mods.Common.Traits
 
 				CellUpdated?.Invoke(c.Cell);
 			}
+			rwl.ReleaseWriterLock();
 		}
 
 		static void RemoveInfluenceInner(ref InfluenceNode influenceNode, Actor toRemove)

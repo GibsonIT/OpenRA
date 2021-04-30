@@ -12,6 +12,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using ConcurrentCollections;
 using OpenRA.Effects;
 using OpenRA.Graphics;
 using OpenRA.Primitives;
@@ -53,8 +54,8 @@ namespace OpenRA.Traits
 		readonly SpatiallyPartitioned<IEffect> partitionedRenderableEffects;
 
 		// Updates are done in one pass to ensure all bound changes have been applied
-		readonly HashSet<Actor> addOrUpdateActors = new HashSet<Actor>();
-		readonly HashSet<Actor> removeActors = new HashSet<Actor>();
+		readonly ConcurrentHashSet<Actor> addOrUpdateActors = new ConcurrentHashSet<Actor>();
+		readonly ConcurrentHashSet<Actor> removeActors = new ConcurrentHashSet<Actor>();
 		readonly Cache<Player, HashSet<FrozenActor>> addOrUpdateFrozenActors;
 		readonly Cache<Player, HashSet<FrozenActor>> removeFrozenActors;
 
@@ -98,7 +99,7 @@ namespace OpenRA.Traits
 		public void AddOrUpdate(Actor a)
 		{
 			if (removeActors.Contains(a))
-				removeActors.Remove(a);
+				removeActors.TryRemove(a);
 
 			addOrUpdateActors.Add(a);
 		}

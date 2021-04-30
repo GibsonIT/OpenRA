@@ -243,7 +243,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public virtual IEnumerable<ProductionItem> AllQueued()
 		{
-			return Queue;
+			return Queue.AsReadOnly();
 		}
 
 		public virtual IEnumerable<ActorInfo> AllItems()

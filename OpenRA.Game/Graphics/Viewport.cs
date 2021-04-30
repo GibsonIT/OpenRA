@@ -49,7 +49,7 @@ namespace OpenRA.Graphics
 		readonly Size tileSize;
 
 		// Viewport geometry (world-px)
-		public int2 CenterLocation { get; private set; }
+		public int2 CenterLocation { get; private set; } //Use lock for set
 
 		public WPos CenterPosition => worldRenderer.ProjectedPosition(CenterLocation);
 
@@ -58,10 +58,10 @@ namespace OpenRA.Graphics
 		public int2 BottomRight => CenterLocation + viewportSize / 2;
 		int2 viewportSize;
 		ProjectedCellRegion cells;
-		bool cellsDirty = true;
+		bool cellsDirty = true; //Use lock for set
 
 		ProjectedCellRegion allCells;
-		bool allCellsDirty = true;
+		bool allCellsDirty = true; //Use lock for set
 
 		WorldViewport lastViewportDistance;
 
@@ -73,6 +73,10 @@ namespace OpenRA.Graphics
 		float unlockedMinZoomScale;
 		float unlockedMinZoom = 1f;
 
+		//Locks
+		Object dirtyCellsLock = new Object();
+		Object locationLock = new Object();
+
 		public float Zoom
 		{
 			get => zoom;
@@ -81,8 +85,11 @@ namespace OpenRA.Graphics
 			{
 				zoom = value;
 				viewportSize = (1f / zoom * new float2(Game.Renderer.NativeResolution)).ToInt2();
-				cellsDirty = true;
-				allCellsDirty = true;
+				lock (dirtyCellsLock)
+				{
+					cellsDirty = true;
+					allCellsDirty = true;
+				}
 			}
 		}
 
@@ -99,7 +106,10 @@ namespace OpenRA.Graphics
 			var oldCenter = worldRenderer.Viewport.ViewToWorldPx(center);
 			AdjustZoom(dz);
 			var newCenter = worldRenderer.Viewport.ViewToWorldPx(center);
-			CenterLocation += oldCenter - newCenter;
+			lock (locationLock)
+			{
+				CenterLocation += oldCenter - newCenter;
+			}
 		}
 
 		public void ToggleZoom()
@@ -170,14 +180,20 @@ namespace OpenRA.Graphics
 					height /= 2;
 
 				mapBounds = new Rectangle(0, 0, width, height);
-				CenterLocation = new int2(width / 2, height / 2);
+				lock (locationLock)
+				{
+					CenterLocation = new int2(width / 2, height / 2);
+				}
 			}
 			else
 			{
 				var tl = wr.ScreenPxPosition(map.ProjectedTopLeft);
 				var br = wr.ScreenPxPosition(map.ProjectedBottomRight);
 				mapBounds = Rectangle.FromLTRB(tl.X, tl.Y, br.X, br.Y);
-				CenterLocation = (tl + br) / 2;
+				lock (locationLock)
+				{
+					CenterLocation = (tl + br) / 2;
+				}
 			}
 
 			tileSize = grid.TileSize;
@@ -323,20 +339,35 @@ namespace OpenRA.Graphics
 
 		public void Center(WPos pos)
 		{
-			CenterLocation = worldRenderer.ScreenPxPosition(pos).Clamp(mapBounds);
-			cellsDirty = true;
-			allCellsDirty = true;
+			lock (locationLock)
+			{
+				CenterLocation = worldRenderer.ScreenPxPosition(pos).Clamp(mapBounds);
+			}
+
+			lock (dirtyCellsLock)
+			{
+				cellsDirty = true;
+				allCellsDirty = true;
+			}
 		}
 
 		public void Scroll(float2 delta, bool ignoreBorders)
 		{
 			// Convert scroll delta from world-px to viewport-px
-			CenterLocation += (1f / Zoom * delta).ToInt2();
-			cellsDirty = true;
-			allCellsDirty = true;
-
+			lock (locationLock)
+			{
+			int2 NewLocation = CenterLocation + (1f / Zoom * delta).ToInt2();
 			if (!ignoreBorders)
-				CenterLocation = CenterLocation.Clamp(mapBounds);
+				NewLocation = NewLocation.Clamp(mapBounds);
+			CenterLocation = NewLocation;
+			}
+			lock (dirtyCellsLock)
+			{
+				cellsDirty = true;
+				allCellsDirty = true;
+			}
+
+
 		}
 
 		// Rectangle (in viewport coords) that contains things to be drawn
@@ -390,7 +421,10 @@ namespace OpenRA.Graphics
 				if (cellsDirty)
 				{
 					cells = CalculateVisibleCells(true);
-					cellsDirty = false;
+					lock (dirtyCellsLock)
+					{
+						cellsDirty = false;
+					}
 				}
 
 				return cells;
@@ -404,7 +438,10 @@ namespace OpenRA.Graphics
 				if (allCellsDirty)
 				{
 					allCells = CalculateVisibleCells(false);
-					allCellsDirty = false;
+					lock (dirtyCellsLock)
+					{
+						allCellsDirty = false;
+					}
 				}
 
 				return allCells;

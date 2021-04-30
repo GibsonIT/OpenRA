@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using OpenRA.Traits;
 
@@ -20,7 +21,7 @@ namespace OpenRA.Graphics
 		public ITexture Texture { get; private set; }
 		public int Height { get; private set; }
 		readonly Dictionary<string, ImmutablePalette> palettes = new Dictionary<string, ImmutablePalette>();
-		readonly Dictionary<string, MutablePalette> modifiablePalettes = new Dictionary<string, MutablePalette>();
+		readonly ConcurrentDictionary<string, MutablePalette> modifiablePalettes = new ConcurrentDictionary<string, MutablePalette>();
 		readonly IReadOnlyDictionary<string, MutablePalette> readOnlyModifiablePalettes;
 		readonly Dictionary<string, int> indices = new Dictionary<string, int>();
 		byte[] buffer = new byte[0];
@@ -68,7 +69,7 @@ namespace OpenRA.Graphics
 			}
 
 			if (allowModifiers)
-				modifiablePalettes.Add(name, new MutablePalette(p));
+				modifiablePalettes.TryAdd(name, new MutablePalette(p));
 			else
 				CopyPaletteToBuffer(index, p);
 		}

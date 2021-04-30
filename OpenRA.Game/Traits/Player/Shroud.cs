@@ -10,7 +10,10 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Xml.Linq;
+using OpenRA.Support;
 
 namespace OpenRA.Traits
 {
@@ -87,7 +90,7 @@ namespace OpenRA.Traits
 		readonly Map map;
 
 		// Individual shroud modifier sources (type and area)
-		readonly Dictionary<object, ShroudSource> sources = new Dictionary<object, ShroudSource>();
+		readonly ConcurrentDictionary<object, ShroudSource> sources = new ConcurrentDictionary<object, ShroudSource>();
 
 		// Per-cell count of each source type, used to resolve the final cell type
 		readonly ProjectedCellLayer<short> passiveVisibleCount;
@@ -121,6 +124,8 @@ namespace OpenRA.Traits
 
 		public int Hash { get; private set; }
 
+		int lastTick = 0;
+
 		// Enabled at runtime on first use
 		bool shroudGenerationEnabled;
 		bool passiveVisibilityEnabled;
@@ -129,6 +134,7 @@ namespace OpenRA.Traits
 		{
 			this.self = self;
 			this.info = info;
+			lastTick = self.World.WorldTick;
 			map = self.World.Map;
 
 			passiveVisibleCount = new ProjectedCellLayer<short>(map);
@@ -154,6 +160,11 @@ namespace OpenRA.Traits
 
 		void ITick.Tick(Actor self)
 		{
+			if (lastTick == self.World.WorldTick)
+			{
+				return;
+			}
+
 			if (!anyCellTouched)
 				return;
 
@@ -201,6 +212,7 @@ namespace OpenRA.Traits
 			}
 
 			Hash = Sync.HashPlayer(self.Owner) + self.World.WorldTick;
+			lastTick = self.World.WorldTick;
 		}
 
 		public static IEnumerable<PPos> ProjectedCellsInRange(Map map, WPos pos, WDist minRange, WDist maxRange, int maxHeightDelta = -1)
@@ -234,6 +246,8 @@ namespace OpenRA.Traits
 
 		public void AddSource(object key, SourceType type, PPos[] projectedCells)
 		{
+
+
 			if (sources.ContainsKey(key))
 				throw new InvalidOperationException("Attempting to add duplicate shroud source");
 
@@ -269,6 +283,8 @@ namespace OpenRA.Traits
 
 		public void RemoveSource(object key)
 		{
+
+
 			if (!sources.TryGetValue(key, out var state))
 				return;
 
@@ -295,7 +311,7 @@ namespace OpenRA.Traits
 				}
 			}
 
-			sources.Remove(key);
+			sources.Remove(key, out _);
 		}
 
 		public void ExploreProjectedCells(World world, IEnumerable<PPos> cells)
