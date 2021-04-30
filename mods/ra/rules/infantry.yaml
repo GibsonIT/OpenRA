@@ -1,5 +1,6 @@
 E1:
 	Inherits: ^Soldier
+    ActorCloudCreator:
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Buildable:
 		Queue: Infantry
