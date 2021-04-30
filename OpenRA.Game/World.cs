@@ -426,10 +426,13 @@ namespace OpenRA
 				var clouds = CalculateActorClouds().ToList();
 				Console.WriteLine($"We have = {clouds.Count} clouds this tick {WorldTick}");
 
+				// First we run all ConcurrentTicks, max one thread for each cloud
 				Parallel.For(0, clouds.Count,
 					i => ApplyToSuppliedActorsWithTraitTimed<IConcurrentTick>((actor, trait) => trait.ConcurrentTick(actor, i), clouds.ElementAt(i), "Trait"));
 
-				// ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
+				// Then we run all "synchronous" ticks. Either things that doesn't support clouds or things from
+				// the concurrent tick that should be finalized synchronously
+				ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
 
 				effects.DoTimed(e => e.Tick(this), "Effect");
 			}
