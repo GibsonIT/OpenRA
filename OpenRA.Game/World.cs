@@ -279,6 +279,8 @@ namespace OpenRA
 
 			if (rc != null)
 				rc.Metadata = new ReplayMetadata(gameInfo);
+
+			TraitDict.EnsureExistence<IConcurrentTick>();
 		}
 
 		public void SetWorldOwner(Player p)

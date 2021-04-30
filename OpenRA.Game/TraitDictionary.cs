@@ -85,6 +85,11 @@ namespace OpenRA
 				throw new InvalidOperationException("Attempted to get trait from destroyed object ({0})".F(actor));
 		}
 
+		public void EnsureExistence<T>()
+		{
+			InnerGet<T>();
+		}
+
 		public T Get<T>(Actor actor)
 		{
 			CheckDestroyed(actor);
@@ -151,6 +156,7 @@ namespace OpenRA
 		{
 			readonly List<Actor> actors = new List<Actor>();
 			readonly List<T> traits = new List<T>();
+			readonly Dictionary<string, T> uniqueTraitNames = new Dictionary<string, T>();
 
 			public int Queries { get; private set; }
 
@@ -159,6 +165,9 @@ namespace OpenRA
 				var insertIndex = actors.BinarySearchMany(actor.ActorID + 1);
 				actors.Insert(insertIndex, actor);
 				traits.Insert(insertIndex, (T)trait);
+
+				var name = trait.GetType().Name;
+				uniqueTraitNames.TryAdd(name, (T)trait);
 			}
 
 			public T Get(Actor actor)
