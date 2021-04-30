@@ -427,7 +427,7 @@ namespace OpenRA
 				Console.WriteLine($"We have = {clouds.Count} clouds this tick {WorldTick}");
 
 				Parallel.For(0, clouds.Count,
-					i => ApplyToSuppliedActorsWithTraitTimed<IConcurrentTick>((actor, trait) => trait.Tick(actor, i), clouds.ElementAt(i), "Trait"));
+					i => ApplyToSuppliedActorsWithTraitTimed<IConcurrentTick>((actor, trait) => trait.ConcurrentTick(actor, i), clouds.ElementAt(i), "Trait"));
 
 				// ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
 
@@ -562,9 +562,9 @@ namespace OpenRA
 			TraitDict.ApplyToActorsWithTraitTimed<T>(action, text);
 		}
 
-		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> actors, string text)
+		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> filterActors, string text)
 		{
-			TraitDict.ApplyToSuppliedActorsWithTraitTimed<T>(action, actors, text);
+			TraitDict.ApplyToSuppliedActorsWithTraitTimed<T>(action, filterActors, text);
 		}
 
 		public IEnumerable<Actor> ActorsHavingTrait<T>()

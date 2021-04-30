@@ -114,7 +114,7 @@ namespace OpenRA.Traits
 	[RequireExplicitImplementation]
 	public interface ITick { void Tick(Actor self); }
 	[RequireExplicitImplementation]
-	public interface IConcurrentTick { void Tick(Actor self, int cloudId); }
+	public interface IConcurrentTick { void ConcurrentTick(Actor self, int cloudId); }
 	[RequireExplicitImplementation]
 	public interface ITickRender { void TickRender(WorldRenderer wr, Actor self); }
 	public interface IRender
