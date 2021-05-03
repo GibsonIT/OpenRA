@@ -78,7 +78,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		}
 	}
 
-	public class RenderSprites : IRender, ITick, INotifyOwnerChanged, INotifyEffectiveOwnerChanged, IActorPreviewInitModifier
+	public class RenderSprites : IRender, IConcurrentTick, INotifyOwnerChanged, INotifyEffectiveOwnerChanged, IActorPreviewInitModifier
 	{
 		static readonly (DamageState DamageState, string Prefix)[] DamagePrefixes =
 		{
@@ -201,7 +201,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 					yield return a.Animation.ScreenBounds(self, wr);
 		}
 
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.Tick(Actor self, int cloudid)
 		{
 			Tick(self);
 		}
