@@ -103,6 +103,8 @@ namespace OpenRA.Traits
 		// Per-cell cache of the resolved cell type (shroud/fog/visible)
 		readonly ProjectedCellLayer<ShroudCellType> resolvedType;
 
+		static readonly object lockObj = new object();
+
 		[Sync]
 		bool disabled;
 		public bool Disabled
@@ -251,32 +253,35 @@ namespace OpenRA.Traits
 			if (sources.ContainsKey(key))
 				throw new InvalidOperationException("Attempting to add duplicate shroud source");
 
-			sources[key] = new ShroudSource(type, projectedCells);
-
-			foreach (var puv in projectedCells)
+			lock (lockObj)
 			{
-				// Force cells outside the visible bounds invisible
-				if (!map.Contains(puv))
-					continue;
+				sources[key] = new ShroudSource(type, projectedCells);
 
-				var index = touched.Index(puv);
-				touched[index] = true;
-				anyCellTouched = true;
-				switch (type)
+				foreach (var puv in projectedCells)
 				{
-					case SourceType.PassiveVisibility:
-						passiveVisibilityEnabled = true;
-						passiveVisibleCount[index]++;
-						explored[index] = true;
-						break;
-					case SourceType.Visibility:
-						visibleCount[index]++;
-						explored[index] = true;
-						break;
-					case SourceType.Shroud:
-						shroudGenerationEnabled = true;
-						generatedShroudCount[index]++;
-						break;
+					// Force cells outside the visible bounds invisible
+					if (!map.Contains(puv))
+						continue;
+
+					var index = touched.Index(puv);
+					touched[index] = true;
+					anyCellTouched = true;
+					switch (type)
+					{
+						case SourceType.PassiveVisibility:
+							passiveVisibilityEnabled = true;
+							passiveVisibleCount[index]++;
+							explored[index] = true;
+							break;
+						case SourceType.Visibility:
+							visibleCount[index]++;
+							explored[index] = true;
+							break;
+						case SourceType.Shroud:
+							shroudGenerationEnabled = true;
+							generatedShroudCount[index]++;
+							break;
+					}
 				}
 			}
 		}
@@ -288,7 +293,7 @@ namespace OpenRA.Traits
 			if (!sources.TryGetValue(key, out var state))
 				return;
 
-			foreach (var puv in state.ProjectedCells)
+			lock (lockObj) foreach (var puv in state.ProjectedCells)
 			{
 				// Cells outside the visible bounds don't increment visibleCount
 				if (map.Contains(puv))
