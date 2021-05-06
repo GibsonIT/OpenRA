@@ -147,8 +147,9 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class Mobile : PausableConditionalTrait<MobileInfo>, IIssueOrder, IResolveOrder, IOrderVoice, IPositionable, IMove, ITick, ICreationActivity,
-		IFacing, IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove, IActorPreviewInitModifier, INotifyBecomingIdle
+	public class Mobile : PausableConditionalTrait<MobileInfo>, IIssueOrder, IResolveOrder, IOrderVoice, IPositionable, IMove, ICreationActivity,
+		IFacing, IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove, IActorPreviewInitModifier, INotifyBecomingIdle,
+		IConcurrentTick
 	{
 		readonly Actor self;
 		readonly Lazy<IEnumerable<int>> speedModifiers;
@@ -296,7 +297,7 @@ namespace OpenRA.Mods.Common.Traits
 			base.Created(self);
 		}
 
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
 		{
 			UpdateMovement(self);
 		}
