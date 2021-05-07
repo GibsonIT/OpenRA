@@ -14,6 +14,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using ConcurrentCollections;
 using OpenRA.Primitives;
 using OpenRA.Traits;
 
@@ -27,7 +28,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new ActorMap(init.World, this); }
 	}
 
-	public class ActorMap : IActorMap, ITick, INotifyCreated
+	public class ActorMap : IActorMap, ITick, INotifyCreated, IConcurrentTick
 	{
 		class InfluenceNode
 		{
@@ -180,8 +181,10 @@ namespace OpenRA.Mods.Common.Traits
 
 		// Position updates are done in one pass
 		// to ensure consistency during a tick
-		readonly HashSet<Actor> addActorPosition = new HashSet<Actor>();
-		readonly HashSet<Actor> removeActorPosition = new HashSet<Actor>();
+		 ConcurrentHashSet<Actor> addActorPosition = new ConcurrentHashSet<Actor>();
+		 ConcurrentHashSet<Actor> addActorPositionBuffer = new ConcurrentHashSet<Actor>();
+		 ConcurrentHashSet<Actor> removeActorPosition = new ConcurrentHashSet<Actor>();
+		 ConcurrentHashSet<Actor> removeActorPositionBuffer = new ConcurrentHashSet<Actor>();
 		readonly Predicate<Actor> actorShouldBeRemoved;
 
 
@@ -206,7 +209,7 @@ namespace OpenRA.Mods.Common.Traits
 					bins[row * cols + col] = new Bin();
 
 			// PERF: Cache this delegate so it does not have to be allocated repeatedly.
-			actorShouldBeRemoved = removeActorPosition.Contains;
+			actorShouldBeRemoved = removeActorPositionBuffer.Contains;
 
 			LargestActorRadius = map.Rules.Actors.SelectMany(a => a.Value.TraitInfos<HitShapeInfo>()).Max(h => h.Type.OuterRadius);
 			var blockers = map.Rules.Actors.Where(a => a.Value.HasTraitInfo<IBlocksProjectilesInfo>());
@@ -466,7 +469,7 @@ namespace OpenRA.Mods.Common.Traits
 				CellUpdated(c.Cell);
 		}
 
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.Tick(Actor self, int cloudId)
 		{
 			// Position updates are done in one pass
 			// to ensure consistency during a tick
@@ -478,9 +481,9 @@ namespace OpenRA.Mods.Common.Traits
 						t.Dirty = true;
 			}
 
-			removeActorPosition.Clear();
+			removeActorPositionBuffer.Clear();
 
-			foreach (var a in addActorPosition)
+			foreach (var a in addActorPositionBuffer)
 			{
 				var pos = a.CenterPosition;
 				var col = WorldCoordToBinIndex(pos.X).Clamp(0, cols - 1);
@@ -492,13 +495,23 @@ namespace OpenRA.Mods.Common.Traits
 					t.Dirty = true;
 			}
 
-			addActorPosition.Clear();
+			addActorPositionBuffer.Clear();
 
 			foreach (var t in cellTriggers)
 				t.Value.Tick(this);
 
 			foreach (var t in proximityTriggers)
 				t.Value.Tick(this);
+		}
+		void ITick.Tick(Actor self)
+		{
+			var temp = addActorPosition;
+			addActorPosition = addActorPositionBuffer;
+			addActorPositionBuffer = temp;
+
+			temp = removeActorPosition;
+			removeActorPosition = removeActorPositionBuffer;
+			removeActorPositionBuffer = temp;
 		}
 
 		public int AddCellTrigger(CPos[] cells, Action<Actor> onEntry, Action<Actor> onExit)
