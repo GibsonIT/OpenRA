@@ -51,7 +51,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class TakeCover : Turreted, INotifyDamage, IDamageModifier, ISpeedModifier, ISync, IRenderInfantrySequenceModifier
+	public class TakeCover : Turreted, INotifyDamage, IDamageModifier, ISpeedModifier, ISync, IRenderInfantrySequenceModifier, IConcurrentTick
 	{
 		readonly TakeCoverInfo info;
 
@@ -85,9 +85,13 @@ namespace OpenRA.Mods.Common.Traits
 			remainingDuration = info.Duration;
 		}
 
-		protected override void Tick(Actor self)
+		void IConcurrentTick.Tick(Actor self, int cloudId)
 		{
 			base.Tick(self);
+
+		}
+		protected override void Tick(Actor self)
+		{
 
 			if (!IsTraitPaused && remainingDuration > 0)
 				remainingDuration--;
