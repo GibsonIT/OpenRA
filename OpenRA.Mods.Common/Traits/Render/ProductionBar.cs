@@ -42,7 +42,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		public override object Create(ActorInitializer init) { return new ProductionBar(init.Self, this); }
 	}
 
-	class ProductionBar : ConditionalTrait<ProductionBarInfo>, ISelectionBar, ITick, INotifyOwnerChanged
+	class ProductionBar : ConditionalTrait<ProductionBarInfo>, ISelectionBar, INotifyOwnerChanged, IConcurrentTick
 	{
 		readonly Actor self;
 		ProductionQueue queue;
@@ -75,7 +75,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 			}
 		}
 
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.Tick(Actor self, int cloudId)
 		{
 			if (IsTraitDisabled)
 				return;
