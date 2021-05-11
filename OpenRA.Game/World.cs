@@ -426,7 +426,7 @@ namespace OpenRA
 
 				// Calculate actor clouds here
 				var clouds = CalculateActorClouds().ToList();
-				Console.WriteLine($"We have = {clouds.Count} clouds this tick {WorldTick}");
+				Console.WriteLine($"We have = {clouds.Count - 1} clouds this tick {WorldTick}");
 
 				// First we run all ConcurrentTicks, max one thread for each cloud
 				Parallel.For(0, clouds.Count,
@@ -497,6 +497,13 @@ namespace OpenRA
 				}
 			}
 
+			// TODO: Will be the same every game, can be created at start of new game instead
+			// Create a new cloud for world & player actors
+			var worldPlayerCloud = new HashSet<Actor>(Players.Select(p => p.PlayerActor))
+			{
+				WorldActor
+			};
+			actorClouds.Add(worldPlayerCloud);
 			return actorClouds;
 		}
 
