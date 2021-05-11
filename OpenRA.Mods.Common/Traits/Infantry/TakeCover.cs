@@ -88,11 +88,10 @@ namespace OpenRA.Mods.Common.Traits
 		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
 		{
 			base.Tick(self);
-
 		}
+
 		protected override void Tick(Actor self)
 		{
-
 			if (!IsTraitPaused && remainingDuration > 0)
 				remainingDuration--;
 
