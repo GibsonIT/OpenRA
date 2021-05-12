@@ -9,6 +9,7 @@
  */
 #endregion
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Primitives;
@@ -49,7 +50,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class Health : IHealth, ISync, ITick, INotifyCreated, INotifyOwnerChanged
+	public class Health : IHealth, ISync, ITick, IConcurrentTick, INotifyCreated, INotifyOwnerChanged
 	{
 		public readonly HealthInfo Info;
 		INotifyDamageStateChanged[] notifyDamageStateChanged;
@@ -62,6 +63,23 @@ namespace OpenRA.Mods.Common.Traits
 
 		[Sync]
 		int hp;
+
+		ConcurrentBag<Notifier> notifiersDamaged = new ConcurrentBag<Notifier>();
+		ConcurrentBag<Notifier> notifiersAppliedDamaged = new ConcurrentBag<Notifier>();
+		ConcurrentBag<Notifier> notifiersKilled = new ConcurrentBag<Notifier>();
+		struct Notifier
+		{
+			public Actor self;
+			public Actor other;
+			public AttackInfo ai;
+		}
+
+		enum NotifierTypes
+		{
+			Damaged,
+			AppliedDamaged,
+			Killed
+		}
 
 		public int DisplayHP { get; private set; }
 
@@ -145,6 +163,7 @@ namespace OpenRA.Mods.Common.Traits
 			foreach (var nd in notifyDamagePlayer)
 				nd.Damaged(self, ai);
 
+
 			foreach (var nd in notifyDamageStateChanged)
 				nd.DamageStateChanged(self, ai);
 
@@ -198,29 +217,41 @@ namespace OpenRA.Mods.Common.Traits
 				PreviousDamageState = oldState,
 			};
 
-			foreach (var nd in notifyDamage)
-				nd.Damaged(self, ai);
-			foreach (var nd in notifyDamagePlayer)
-				nd.Damaged(self, ai);
+				var notifier = new Notifier
+				{
+					self = self,
+					ai = ai,
+					other = attacker
 
-			if (DamageState != oldState)
-				foreach (var nd in notifyDamageStateChanged)
-					nd.DamageStateChanged(self, ai);
+				};
 
-			if (Info.NotifyAppliedDamage && attacker != null && attacker.IsInWorld && !attacker.IsDead)
-			{
-				foreach (var nd in attacker.TraitsImplementing<INotifyAppliedDamage>())
-					nd.AppliedDamage(attacker, self, ai);
-				foreach (var nd in attacker.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
-					nd.AppliedDamage(attacker, self, ai);
-			}
+				foreach (var nd in notifyDamage)
+					nd.Damaged(self, ai);
 
-			if (hp == 0)
-			{
-				foreach (var nd in notifyKilled)
-					nd.Killed(self, ai);
-				foreach (var nd in notifyKilledPlayer)
-					nd.Killed(self, ai);
+				notifiersDamaged.Add(notifier);
+
+
+				if (DamageState != oldState)
+					foreach (var nd in notifyDamageStateChanged)
+						nd.DamageStateChanged(self, ai);
+
+				if (Info.NotifyAppliedDamage && attacker != null && attacker.IsInWorld && !attacker.IsDead)
+				{
+					foreach (var nd in attacker.TraitsImplementing<INotifyAppliedDamage>())
+						nd.AppliedDamage(attacker, self, ai);
+					notifiersAppliedDamaged.Add(notifier);
+
+				}
+
+				if (hp == 0)
+				{
+					foreach (var nd in notifyKilled)
+						nd.Killed(self, ai);
+
+					notifiersKilled.Add(notifier);
+
+					if (RemoveOnDeath)
+						self.Dispose();
 
 				if (RemoveOnDeath)
 					self.Dispose();
@@ -238,6 +269,30 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		void ITick.Tick(Actor self)
+		{
+			var nds = notifiersDamaged.ToArray().OrderBy(n => n.other.ActorID);
+			var nads = notifiersAppliedDamaged.ToArray().OrderBy(n => n.other.ActorID);
+			var nks = notifiersKilled.ToArray().OrderBy(n => n.other.ActorID);
+
+			foreach (var n in nds)
+			{
+				foreach (var nd in notifyDamagePlayer)
+					nd.Damaged(n.self, n.ai);
+			}
+			foreach (var n in nads)
+			{
+				foreach (var nd in n.other.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
+					nd.AppliedDamage(n.other, n.self, n.ai);
+			}
+			foreach (var n in nks)
+			{
+				foreach (var nd in notifyKilledPlayer)
+					nd.Killed(n.self, n.ai);
+			}
+
+		}
+
+		void IConcurrentTick.ConcurrentTick(Actor self, int cloud)
 		{
 			if (hp >= DisplayHP)
 				DisplayHP = hp;
