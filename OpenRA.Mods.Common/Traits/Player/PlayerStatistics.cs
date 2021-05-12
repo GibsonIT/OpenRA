@@ -1,4 +1,5 @@
 #region Copyright & License Information
+
 /*
  * Copyright 2007-2020 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
@@ -7,10 +8,13 @@
  * the License, or (at your option) any later version. For more
  * information, see COPYING.
  */
+
 #endregion
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Threading;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits.Render;
 using OpenRA.Primitives;
@@ -39,6 +43,7 @@ namespace OpenRA.Mods.Common.Traits
 		public int DisplayIncome;
 
 		public List<int> ArmySamples = new List<int>(100);
+
 
 		public int KillsCost;
 		public int DeathsCost;
@@ -184,8 +189,7 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("Add to assets value in statistics")]
 		public bool AddToAssetsValue = true;
 
-		[ActorReference]
-		[Desc("Count this actor as a different type in the spectator army display.")]
+		[ActorReference] [Desc("Count this actor as a different type in the spectator army display.")]
 		public string OverrideActor = null;
 
 		public override object Create(ActorInitializer init) { return new UpdatesPlayerStatistics(this, init.Self); }
@@ -215,82 +219,134 @@ namespace OpenRA.Mods.Common.Traits
 			if (self.Owner.WinState != WinState.Undefined)
 				return;
 
+			var building = self.Info.HasTraitInfo<BuildingInfo>();
+			var positionable = self.Info.HasTraitInfo<IPositionableInfo>();
+
 			var attackerStats = e.Attacker.Owner.PlayerActor.Trait<PlayerStatistics>();
-			if (self.Info.HasTraitInfo<BuildingInfo>())
+			//Update for attacker
+			lock (attackerStats)
 			{
-				attackerStats.BuildingsKilled++;
-				playerStats.BuildingsDead++;
-			}
-			else if (self.Info.HasTraitInfo<IPositionableInfo>())
-			{
-				attackerStats.UnitsKilled++;
-				playerStats.UnitsDead++;
+				if (building)
+				{
+					attackerStats.BuildingsKilled++;
+					//playerStats.BuildingsDead++;
+				}
+				else if (positionable)
+				{
+					attackerStats.UnitsKilled++;
+					//playerStats.UnitsDead++;
+				}
+
+				attackerStats.KillsCost += cost;
 			}
 
-			attackerStats.KillsCost += cost;
-			playerStats.DeathsCost += cost;
-			if (includedInArmyValue)
+			//Update for current player
+			lock (playerStats)
 			{
-				playerStats.ArmyValue -= cost;
-				includedInArmyValue = false;
-				playerStats.Units[actorName].Count--;
-			}
+				if (building)
+				{
+					//attackerStats.BuildingsKilled++;
+					playerStats.BuildingsDead++;
+				}
+				else if (positionable)
+				{
+					//attackerStats.UnitsKilled++;
+					playerStats.UnitsDead++;
+				}
 
-			if (includedInAssetsValue)
-			{
-				playerStats.AssetsValue -= cost;
-				includedInAssetsValue = false;
+				playerStats.DeathsCost += cost;
+				if (includedInArmyValue)
+				{
+					playerStats.ArmyValue -= cost;
+					includedInArmyValue = false;
+					playerStats.Units[actorName].Count--;
+				}
+
+				if (includedInAssetsValue)
+				{
+					playerStats.AssetsValue -= cost;
+					includedInAssetsValue = false;
+				}
 			}
 		}
 
 		void INotifyCreated.Created(Actor self)
 		{
-			includedInArmyValue = info.AddToArmyValue;
-			if (includedInArmyValue)
+			lock (playerStats)
 			{
-				playerStats.ArmyValue += cost;
-				playerStats.Units[actorName].Count++;
-			}
+				includedInArmyValue = info.AddToArmyValue;
+				if (includedInArmyValue)
+				{
+					playerStats.ArmyValue += cost;
+					playerStats.Units[actorName].Count++;
+				}
 
-			includedInAssetsValue = info.AddToAssetsValue;
-			if (includedInAssetsValue)
-				playerStats.AssetsValue += cost;
+				includedInAssetsValue = info.AddToAssetsValue;
+				if (includedInAssetsValue)
+					playerStats.AssetsValue += cost;
+			}
 		}
 
 		void INotifyOwnerChanged.OnOwnerChanged(Actor self, Player oldOwner, Player newOwner)
 		{
 			var newOwnerStats = newOwner.PlayerActor.Trait<PlayerStatistics>();
-			if (includedInArmyValue)
+			//Update new owner
+			lock (newOwnerStats)
 			{
-				playerStats.ArmyValue -= cost;
-				newOwnerStats.ArmyValue += cost;
-				playerStats.Units[actorName].Count--;
-				newOwnerStats.Units[actorName].Count++;
+				if (includedInArmyValue)
+				{
+					//playerStats.ArmyValue -= cost;
+					newOwnerStats.ArmyValue += cost;
+					//playerStats.Units[actorName].Count--;
+					newOwnerStats.Units[actorName].Count++;
+				}
+
+				if (includedInAssetsValue)
+				{
+					//playerStats.AssetsValue -= cost;
+					newOwnerStats.AssetsValue += cost;
+				}
 			}
 
-			if (includedInAssetsValue)
+			// Update current player
+			lock (playerStats)
 			{
-				playerStats.AssetsValue -= cost;
-				newOwnerStats.AssetsValue += cost;
-			}
+				if (includedInArmyValue)
+				{
+					playerStats.ArmyValue -= cost;
+					//newOwnerStats.ArmyValue += cost;
+					playerStats.Units[actorName].Count--;
+					//newOwnerStats.Units[actorName].Count++;
+				}
 
-			playerStats = newOwnerStats;
+				if (includedInAssetsValue)
+				{
+					playerStats.AssetsValue -= cost;
+					//newOwnerStats.AssetsValue += cost;
+				}
+
+				playerStats = newOwnerStats;
+			}
 		}
 
 		void INotifyActorDisposing.Disposing(Actor self)
 		{
-			if (includedInArmyValue)
+			lock (playerStats)
 			{
-				playerStats.ArmyValue -= cost;
-				includedInArmyValue = false;
-				playerStats.Units[actorName].Count--;
-			}
+				if (includedInArmyValue)
+				{
+					playerStats.ArmyValue -= cost;
+					includedInArmyValue = false;
+					playerStats.Units[actorName].Count--;
+				}
 
-			if (includedInAssetsValue)
-			{
-				playerStats.AssetsValue -= cost;
-				includedInAssetsValue = false;
+				if (includedInAssetsValue)
+				{
+					playerStats.AssetsValue -= cost;
+					includedInAssetsValue = false;
+				}
 			}
 		}
 	}
 }
+
