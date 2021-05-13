@@ -217,41 +217,39 @@ namespace OpenRA.Mods.Common.Traits
 				PreviousDamageState = oldState,
 			};
 
-				var notifier = new Notifier
-				{
-					self = self,
-					ai = ai,
-					other = attacker
+			var notifier = new Notifier
+			{
+				self = self,
+				ai = ai,
+				other = attacker
+			};
 
-				};
+			foreach (var nd in notifyDamage)
+				nd.Damaged(self, ai);
 
-				foreach (var nd in notifyDamage)
-					nd.Damaged(self, ai);
-
-				notifiersDamaged.Add(notifier);
+			notifiersDamaged.Add(notifier);
 
 
-				if (DamageState != oldState)
-					foreach (var nd in notifyDamageStateChanged)
-						nd.DamageStateChanged(self, ai);
+			if (DamageState != oldState)
+				foreach (var nd in notifyDamageStateChanged)
+					nd.DamageStateChanged(self, ai);
 
-				if (Info.NotifyAppliedDamage && attacker != null && attacker.IsInWorld && !attacker.IsDead)
-				{
-					foreach (var nd in attacker.TraitsImplementing<INotifyAppliedDamage>())
-						nd.AppliedDamage(attacker, self, ai);
-					notifiersAppliedDamaged.Add(notifier);
+			if (Info.NotifyAppliedDamage && attacker != null && attacker.IsInWorld && !attacker.IsDead)
+			{
+				foreach (var nd in attacker.TraitsImplementing<INotifyAppliedDamage>())
+					nd.AppliedDamage(attacker, self, ai);
+				notifiersAppliedDamaged.Add(notifier);
+			}
 
-				}
+			if (hp == 0)
+			{
+				foreach (var nd in notifyKilled)
+					nd.Killed(self, ai);
 
-				if (hp == 0)
-				{
-					foreach (var nd in notifyKilled)
-						nd.Killed(self, ai);
+				notifiersKilled.Add(notifier);
 
-					notifiersKilled.Add(notifier);
-
-					if (RemoveOnDeath)
-						self.Dispose();
+				if (RemoveOnDeath)
+					self.Dispose();
 
 				if (RemoveOnDeath)
 					self.Dispose();
@@ -259,7 +257,8 @@ namespace OpenRA.Mods.Common.Traits
 				if (attacker == null)
 					Log.Write("debug", "{0} #{1} was killed.", self.Info.Name, self.ActorID);
 				else
-					Log.Write("debug", "{0} #{1} killed by {2} #{3}", self.Info.Name, self.ActorID, attacker.Info.Name, attacker.ActorID);
+					Log.Write("debug", "{0} #{1} killed by {2} #{3}", self.Info.Name, self.ActorID, attacker.Info.Name,
+						attacker.ActorID);
 			}
 		}
 
@@ -279,11 +278,13 @@ namespace OpenRA.Mods.Common.Traits
 				foreach (var nd in notifyDamagePlayer)
 					nd.Damaged(n.self, n.ai);
 			}
+
 			foreach (var n in nads)
 			{
 				foreach (var nd in n.other.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
 					nd.AppliedDamage(n.other, n.self, n.ai);
 			}
+
 			foreach (var n in nks)
 			{
 				foreach (var nd in notifyKilledPlayer)

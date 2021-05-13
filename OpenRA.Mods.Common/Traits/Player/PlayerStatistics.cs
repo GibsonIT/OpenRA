@@ -223,34 +223,31 @@ namespace OpenRA.Mods.Common.Traits
 			var positionable = self.Info.HasTraitInfo<IPositionableInfo>();
 
 			var attackerStats = e.Attacker.Owner.PlayerActor.Trait<PlayerStatistics>();
-			//Update for attacker
+
+			// Update for attacker
 			lock (attackerStats)
 			{
 				if (building)
 				{
 					attackerStats.BuildingsKilled++;
-					//playerStats.BuildingsDead++;
 				}
 				else if (positionable)
 				{
 					attackerStats.UnitsKilled++;
-					//playerStats.UnitsDead++;
 				}
 
 				attackerStats.KillsCost += cost;
 			}
 
-			//Update for current player
+			// Update for current player
 			lock (playerStats)
 			{
 				if (building)
 				{
-					//attackerStats.BuildingsKilled++;
 					playerStats.BuildingsDead++;
 				}
 				else if (positionable)
 				{
-					//attackerStats.UnitsKilled++;
 					playerStats.UnitsDead++;
 				}
 
@@ -290,20 +287,16 @@ namespace OpenRA.Mods.Common.Traits
 		void INotifyOwnerChanged.OnOwnerChanged(Actor self, Player oldOwner, Player newOwner)
 		{
 			var newOwnerStats = newOwner.PlayerActor.Trait<PlayerStatistics>();
-			//Update new owner
 			lock (newOwnerStats)
 			{
 				if (includedInArmyValue)
 				{
-					//playerStats.ArmyValue -= cost;
 					newOwnerStats.ArmyValue += cost;
-					//playerStats.Units[actorName].Count--;
 					newOwnerStats.Units[actorName].Count++;
 				}
 
 				if (includedInAssetsValue)
 				{
-					//playerStats.AssetsValue -= cost;
 					newOwnerStats.AssetsValue += cost;
 				}
 			}
@@ -314,15 +307,12 @@ namespace OpenRA.Mods.Common.Traits
 				if (includedInArmyValue)
 				{
 					playerStats.ArmyValue -= cost;
-					//newOwnerStats.ArmyValue += cost;
 					playerStats.Units[actorName].Count--;
-					//newOwnerStats.Units[actorName].Count++;
 				}
 
 				if (includedInAssetsValue)
 				{
 					playerStats.AssetsValue -= cost;
-					//newOwnerStats.AssetsValue += cost;
 				}
 
 				playerStats = newOwnerStats;
@@ -349,4 +339,3 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 }
-
