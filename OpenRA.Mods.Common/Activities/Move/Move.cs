@@ -171,34 +171,48 @@ namespace OpenRA.Mods.Common.Activities
 			}
 		}
 
-		public override bool Tick(Actor self)
+		bool finished = false;
+		public override void ConcurrentTickActivity(Actor self, int cloudId)
 		{
 			mobile.TurnToMove = false;
 
 			if (IsCanceling && mobile.CanStayInCell(mobile.ToCell))
 			{
 				path?.Clear();
-
-				return true;
+				finished = true;
+				return ;
 			}
 
 			if (mobile.IsTraitDisabled || mobile.IsTraitPaused)
-				return false;
+			{
+				finished = true;
+				return;
+
+			}
 
 			if (destination == mobile.ToCell)
-				return true;
+			{
+				finished = true;
+				return;
+			}
 
 			if (path.Count == 0)
 			{
 				destination = mobile.ToCell;
-				return false;
+				finished = false;
+
+				return;
 			}
 
 			destination = path[0];
 
 			var nextCell = PopPath(self);
 			if (nextCell == null)
-				return false;
+			{
+				finished = false;
+				return;
+
+			}
 
 			var firstFacing = self.World.Map.FacingBetween(mobile.FromCell, nextCell.Value.Cell, mobile.Facing);
 			if (firstFacing != mobile.Facing)
@@ -206,21 +220,29 @@ namespace OpenRA.Mods.Common.Activities
 				path.Add(nextCell.Value.Cell);
 				QueueChild(new Turn(self, firstFacing));
 				mobile.TurnToMove = true;
-				return false;
+				finished = false;
+
+				return ;
 			}
 
 			mobile.SetLocation(mobile.FromCell, mobile.FromSubCell, nextCell.Value.Cell, nextCell.Value.SubCell);
 
 			var map = self.World.Map;
 			var from = (mobile.FromCell.Layer == 0 ? map.CenterOfCell(mobile.FromCell) :
-				self.World.GetCustomMovementLayers()[mobile.FromCell.Layer].CenterOfCell(mobile.FromCell)) +
-				map.Grid.OffsetOfSubCell(mobile.FromSubCell);
+				           self.World.GetCustomMovementLayers()[mobile.FromCell.Layer].CenterOfCell(mobile.FromCell)) +
+			           map.Grid.OffsetOfSubCell(mobile.FromSubCell);
 
 			var to = Util.BetweenCells(self.World, mobile.FromCell, mobile.ToCell) +
-				(map.Grid.OffsetOfSubCell(mobile.FromSubCell) + map.Grid.OffsetOfSubCell(mobile.ToSubCell)) / 2;
+			         (map.Grid.OffsetOfSubCell(mobile.FromSubCell) + map.Grid.OffsetOfSubCell(mobile.ToSubCell)) / 2;
 
 			QueueChild(new MoveFirstHalf(this, from, to, mobile.Facing, mobile.Facing, 0));
-			return false;
+			finished = false;
+
+		}
+
+		public override bool Tick(Actor self)
+		{
+			return finished;
 		}
 
 		(CPos Cell, SubCell SubCell)? PopPath(Actor self)

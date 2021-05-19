@@ -172,6 +172,12 @@ namespace OpenRA.Activities
 
 		public void ConcurrentTick(Actor self, int cloudId)
 		{
+			if (State == ActivityState.Queued)
+			{
+				OnFirstRun(self);
+				firstRunCompleted = true;
+				State = ActivityState.Active;
+			}
 			if(!ChildHasPriority || ChildActivity == null) ConcurrentTickActivity(self, cloudId);
 			else ChildActivity?.ConcurrentTick(self, cloudId);
 		}
