@@ -58,5 +58,10 @@ namespace OpenRA.Mods.Common.Traits
 
 			mobile.Facing = Util.TickFacing(mobile.Facing, targetFacing, mobile.TurnSpeed);
 		}
+
+		public void TickIdleConcurrent(Actor self, int cloudId)
+		{
+			;
+		}
 	}
 }

@@ -420,12 +420,23 @@ namespace OpenRA
 			{
 				WorldTick++;
 
+				var clouds = CalculateActorClouds().ToList();
+
 				using (new PerfSample("tick_actors"))
-					foreach (var a in actors.Values)
-						a.Tick();
+
+
+				Parallel.For(0, clouds.Count, i =>
+				{
+					foreach (var a in CalculateActorClouds().ElementAt(i))
+					{
+						a.ConcurrentTick(i);
+					}
+				});
+
+				foreach (var a in actors.Values)
+					a.Tick();
 
 				// Calculate actor clouds here
-				var clouds = CalculateActorClouds().ToList();
 				Console.WriteLine($"We have = {clouds.Count - 1} clouds this tick {WorldTick}");
 
 				// First we run all ConcurrentTicks, max one thread for each cloud

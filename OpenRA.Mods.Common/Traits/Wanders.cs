@@ -84,6 +84,11 @@ namespace OpenRA.Mods.Common.Traits
 				DoAction(self, targetCell.Value);
 		}
 
+		void INotifyIdle.TickIdleConcurrent(Actor self, int cloudId)
+		{
+			
+		}
+
 		void INotifyIdle.TickIdle(Actor self)
 		{
 			TickIdle(self);

@@ -270,6 +270,11 @@ namespace OpenRA.Mods.Common.Traits
 			ScanAndAttack(self, allowMove, allowTurn);
 		}
 
+		public void TickIdleConcurrent(Actor self, int cloudId)
+		{
+
+		}
+
 		void ITick.Tick(Actor self)
 		{
 			if (IsTraitDisabled)

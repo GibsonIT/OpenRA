@@ -108,6 +108,11 @@ namespace OpenRA.Mods.Common.Scripting
 			}
 		}
 
+		public void TickIdleConcurrent(Actor self, int cloudId)
+		{
+			;
+		}
+
 		void INotifyDamage.Damaged(Actor self, AttackInfo e)
 		{
 			if (world.Disposing)

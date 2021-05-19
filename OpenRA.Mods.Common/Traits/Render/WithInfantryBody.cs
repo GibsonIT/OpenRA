@@ -213,6 +213,11 @@ namespace OpenRA.Mods.Common.Traits.Render
 			}
 		}
 
+		public void TickIdleConcurrent(Actor self, int cloudId)
+		{
+			;
+		}
+
 		protected enum AnimationState
 		{
 			Idle,

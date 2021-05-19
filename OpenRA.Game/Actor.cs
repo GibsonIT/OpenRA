@@ -259,6 +259,7 @@ namespace OpenRA
 		public void Tick()
 		{
 			var wasIdle = IsIdle;
+
 			CurrentActivity = ActivityUtils.RunActivity(this, CurrentActivity);
 
 			if (!wasIdle && IsIdle)
@@ -274,6 +275,18 @@ namespace OpenRA
 			else if (wasIdle)
 				foreach (var tickIdle in tickIdles)
 					tickIdle.TickIdle(this);
+		}
+
+		public void ConcurrentTick(int cloudId)
+		{
+			if (IsIdle)
+			{
+				foreach (var TickIdle in tickIdles)
+				{
+					TickIdle.TickIdleConcurrent(this, cloudId);
+				}
+			}
+
 		}
 
 		public IEnumerable<IRenderable> Render(WorldRenderer wr)
