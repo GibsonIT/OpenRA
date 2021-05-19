@@ -51,10 +51,10 @@ namespace OpenRA.Mods.Common.Activities
 				token = self.GrantCondition(attackMove.Info.AttackMoveCondition);
 		}
 
-		public override bool Tick(Actor self)
+		public override void ConcurrentTick(Actor self, int cloudId)
 		{
 			if (IsCanceling || attackMove == null || autoTarget == null)
-				return TickChild(self);
+				return;
 
 			// We are currently not attacking, so scan for new targets.
 			if (ChildActivity == null || runningMoveActivity)
@@ -80,6 +80,12 @@ namespace OpenRA.Mods.Common.Activities
 					QueueChild(getMove());
 				}
 			}
+		}
+
+		public override bool Tick(Actor self)
+		{
+			if (IsCanceling || attackMove == null || autoTarget == null)
+				return TickChild(self);
 
 			// If the move activity finished, we have reached our destination and there are no more enemies on our path.
 			return TickChild(self) && runningMoveActivity;

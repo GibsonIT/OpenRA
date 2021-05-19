@@ -276,6 +276,11 @@ namespace OpenRA
 
 		}
 
+		public void ConcurrentTick(int cloudId)
+		{
+			CurrentActivity?.ConcurrentTick(this, cloudId);
+		}
+
 		public void IdleTick()
 		{
 			if (wasIdle)

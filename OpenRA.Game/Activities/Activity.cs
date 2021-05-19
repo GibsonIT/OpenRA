@@ -164,6 +164,8 @@ namespace OpenRA.Activities
 			return true;
 		}
 
+		public virtual void ConcurrentTick(Actor self, int cloudId){}
+
 		/// <summary>
 		/// Runs once immediately before the first Tick() execution.
 		/// </summary>

@@ -423,7 +423,15 @@ namespace OpenRA
 				var clouds = CalculateActorClouds().ToList();
 				SharedRandom.setNumber(clouds.Count);
 
+				Parallel.For(0, clouds.Count, i =>
+				{
+					foreach (var a in clouds.ElementAt(i))
+					{
+						a.ConcurrentTick(i);
+					}
+				});
 				using (new PerfSample("tick_actors"))
+
 					foreach (var a in actors.Values)
 						a.Tick();
 
