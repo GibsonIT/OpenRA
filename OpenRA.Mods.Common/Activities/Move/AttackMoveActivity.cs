@@ -51,7 +51,7 @@ namespace OpenRA.Mods.Common.Activities
 				token = self.GrantCondition(attackMove.Info.AttackMoveCondition);
 		}
 
-		public override void ConcurrentTick(Actor self, int cloudId)
+		public override void ConcurrentTickActivity(Actor self, int cloudId)
 		{
 			if (IsCanceling || attackMove == null || autoTarget == null)
 				return;

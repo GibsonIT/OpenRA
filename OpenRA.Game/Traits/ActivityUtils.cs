@@ -46,6 +46,11 @@ namespace OpenRA.Traits
 
 				if (act == prev)
 					break;
+
+				else if (act != null && act != prev)
+				{
+					act.ConcurrentTick(self, 0);
+				}
 			}
 
 			return act;
