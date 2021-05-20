@@ -201,7 +201,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 					yield return a.Animation.ScreenBounds(self, wr);
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudid)
+		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
 		{
 			Tick(self);
 		}

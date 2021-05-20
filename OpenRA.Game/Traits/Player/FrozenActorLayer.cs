@@ -224,7 +224,6 @@ namespace OpenRA.Traits
 
 		ConcurrentBag<FrozenActor> frozenActorsToRemove = new ConcurrentBag<FrozenActor>();
 
-
 		public FrozenActorLayer(Actor self, FrozenActorLayerInfo info)
 		{
 			binSize = info.BinSize;
@@ -258,6 +257,7 @@ namespace OpenRA.Traits
 				world.ScreenMap.Remove(owner, fa);
 				frozenActorsById.Remove(fa.ID);
 			}
+
 			frozenActorsToRemove.Clear();
 		}
 
@@ -288,6 +288,7 @@ namespace OpenRA.Traits
 		{
 			RemoveList();
 		}
+
 		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
 		{
 			VisibilityHash = 0;

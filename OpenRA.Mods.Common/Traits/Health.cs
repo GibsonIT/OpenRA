@@ -67,11 +67,12 @@ namespace OpenRA.Mods.Common.Traits
 		ConcurrentBag<Notifier> notifiersDamaged = new ConcurrentBag<Notifier>();
 		ConcurrentBag<Notifier> notifiersAppliedDamaged = new ConcurrentBag<Notifier>();
 		ConcurrentBag<Notifier> notifiersKilled = new ConcurrentBag<Notifier>();
+
 		struct Notifier
 		{
-			public Actor self;
-			public Actor other;
-			public AttackInfo ai;
+			public Actor Self;
+			public Actor Other;
+			public AttackInfo Ai;
 		}
 
 		enum NotifierTypes
@@ -163,7 +164,6 @@ namespace OpenRA.Mods.Common.Traits
 			foreach (var nd in notifyDamagePlayer)
 				nd.Damaged(self, ai);
 
-
 			foreach (var nd in notifyDamageStateChanged)
 				nd.DamageStateChanged(self, ai);
 
@@ -219,16 +219,15 @@ namespace OpenRA.Mods.Common.Traits
 
 			var notifier = new Notifier
 			{
-				self = self,
-				ai = ai,
-				other = attacker
+				Self = self,
+				Ai = ai,
+				Other = attacker
 			};
 
 			foreach (var nd in notifyDamage)
 				nd.Damaged(self, ai);
 
 			notifiersDamaged.Add(notifier);
-
 
 			if (DamageState != oldState)
 				foreach (var nd in notifyDamageStateChanged)
@@ -269,28 +268,27 @@ namespace OpenRA.Mods.Common.Traits
 
 		void ITick.Tick(Actor self)
 		{
-			var nds = notifiersDamaged.ToArray().OrderBy(n => n.other.ActorID);
-			var nads = notifiersAppliedDamaged.ToArray().OrderBy(n => n.other.ActorID);
-			var nks = notifiersKilled.ToArray().OrderBy(n => n.other.ActorID);
+			var nds = notifiersDamaged.ToArray().OrderBy(n => n.Other.ActorID);
+			var nads = notifiersAppliedDamaged.ToArray().OrderBy(n => n.Other.ActorID);
+			var nks = notifiersKilled.ToArray().OrderBy(n => n.Other.ActorID);
 
 			foreach (var n in nds)
 			{
 				foreach (var nd in notifyDamagePlayer)
-					nd.Damaged(n.self, n.ai);
+					nd.Damaged(n.Self, n.Ai);
 			}
 
 			foreach (var n in nads)
 			{
-				foreach (var nd in n.other.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
-					nd.AppliedDamage(n.other, n.self, n.ai);
+				foreach (var nd in n.Other.Owner.PlayerActor.TraitsImplementing<INotifyAppliedDamage>())
+					nd.AppliedDamage(n.Other, n.Self, n.Ai);
 			}
 
 			foreach (var n in nks)
 			{
 				foreach (var nd in notifyKilledPlayer)
-					nd.Killed(n.self, n.ai);
+					nd.Killed(n.Self, n.Ai);
 			}
-
 		}
 
 		void IConcurrentTick.ConcurrentTick(Actor self, int cloud)

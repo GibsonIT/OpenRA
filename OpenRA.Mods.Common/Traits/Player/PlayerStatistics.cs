@@ -44,7 +44,6 @@ namespace OpenRA.Mods.Common.Traits
 
 		public List<int> ArmySamples = new List<int>(100);
 
-
 		public int KillsCost;
 		public int DeathsCost;
 
@@ -189,7 +188,8 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("Add to assets value in statistics")]
 		public bool AddToAssetsValue = true;
 
-		[ActorReference] [Desc("Count this actor as a different type in the spectator army display.")]
+		[ActorReference]
+		[Desc("Count this actor as a different type in the spectator army display.")]
 		public string OverrideActor = null;
 
 		public override object Create(ActorInitializer init) { return new UpdatesPlayerStatistics(this, init.Self); }

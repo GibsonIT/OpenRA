@@ -607,8 +607,12 @@ namespace OpenRA.Traits
 		IEnumerable<VariableObserver> GetVariableObservers();
 	}
 
-	public interface IActorCloudCreator
+	public interface IActorCloudMember
 	{
-		IEnumerable<Actor> GetActorsInLocalCloud();
+		bool UseRadius();
+		WDist GetAopeRadius();
+		WPos GetActorCenterPosition();
+		WPos GetActorInitTopLeftPosition();
+		WVec GetAopeDimensions();
 	}
 }

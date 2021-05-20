@@ -135,6 +135,8 @@ namespace OpenRA
 		public readonly IValidateOrder[] OrderValidators;
 
 		readonly GameInformation gameInfo;
+		ActorCloudsCreator actorCloudsCreator;
+		List<Actor> worldPlayerCloud;
 
 		// Hide the OrderManager from mod code
 		public void IssueOrder(Order o) { OrderManager.IssueOrder(o); }
@@ -281,6 +283,12 @@ namespace OpenRA
 				rc.Metadata = new ReplayMetadata(gameInfo);
 
 			TraitDict.EnsureExistence<IConcurrentTick>();
+
+			actorCloudsCreator = new ActorCloudsCreator(Map.MapSize.X, Map.MapSize.Y);
+			worldPlayerCloud = new List<Actor>(Players.Select(p => p.PlayerActor))
+			{
+				WorldActor
+			};
 		}
 
 		public void SetWorldOwner(Player p)
@@ -425,7 +433,10 @@ namespace OpenRA
 						a.Tick();
 
 				// Calculate actor clouds here
-				var clouds = CalculateActorClouds().ToList();
+				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
+				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
+				clouds.Add(worldPlayerCloud);
+
 				Console.WriteLine($"We have = {clouds.Count - 1} clouds this tick {WorldTick}");
 
 				// First we run all ConcurrentTicks, max one thread for each cloud
@@ -441,70 +452,6 @@ namespace OpenRA
 
 			while (frameEndActions.Count != 0)
 				frameEndActions.Dequeue()(this);
-		}
-
-		private IEnumerable<HashSet<Actor>> CalculateActorClouds()
-		{
-			var actorClouds = new List<HashSet<Actor>>();
-
-			var actorCloudSpawningActors = TraitDict.ActorsWithTrait<IActorCloudCreator>();
-
-			foreach (var actorTraitPair in actorCloudSpawningActors)
-			{
-				var currentActorCloudId = -1;
-				var actorsInCircle = actorTraitPair.Trait.GetActorsInLocalCloud().ToList();
-				foreach (var actor in actorsInCircle)
-				{
-					var newCloudId = -1;
-
-					for (var cloudId = 0; cloudId < actorClouds.Count; cloudId++)
-					{
-						if (cloudId == currentActorCloudId)
-							continue;
-
-						if (actorClouds[cloudId].Contains(actor))
-						{
-							newCloudId = cloudId;
-							break; // A single actor should never be able to belong to more than one cloud
-						}
-					}
-
-					// If we have found that we belong to an existing cloud we add all actors of our existing cloud
-					// (or our local circle if we don't have an existing cloud)
-					if (newCloudId >= 0)
-					{
-						if (currentActorCloudId >= 0)
-						{
-							var maxId = Math.Max(currentActorCloudId, newCloudId);
-							var minId = Math.Min(currentActorCloudId, newCloudId);
-							actorClouds[minId].UnionWith(actorClouds[maxId]);
-							actorClouds.RemoveAt(maxId);
-							currentActorCloudId = minId;
-						}
-						else
-						{
-							actorClouds[newCloudId].UnionWith(actorsInCircle);
-							currentActorCloudId = newCloudId;
-						}
-					}
-				}
-
-				// No cloud existed for us, create a new one
-				if (currentActorCloudId == -1)
-				{
-					var actorCloud = new HashSet<Actor>(actorsInCircle);
-					actorClouds.Add(actorCloud);
-				}
-			}
-
-			// TODO: Will be the same every game, can be created at start of new game instead
-			// Create a new cloud for world & player actors
-			var worldPlayerCloud = new HashSet<Actor>(Players.Select(p => p.PlayerActor))
-			{
-				WorldActor
-			};
-			actorClouds.Add(worldPlayerCloud);
-			return actorClouds;
 		}
 
 		// For things that want to update their render state once per tick, ignoring pause state
