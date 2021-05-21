@@ -21,6 +21,7 @@ E1:
 		HP: 5000
 	Armament@PRIMARY:
 		Weapon: M1Carbine
+        FireDelay: 5
 	Armament@GARRISONED:
 		Name: garrisoned
 		Weapon: Vulcan

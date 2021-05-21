@@ -103,7 +103,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class Armament : PausableConditionalTrait<ArmamentInfo>, IConcurrentTick
+	public class Armament : PausableConditionalTrait<ArmamentInfo>, ITick, IConcurrentTick
 	{
 		public readonly WeaponInfo Weapon;
 		public readonly Barrel[] Barrels;
@@ -210,7 +210,13 @@ namespace OpenRA.Mods.Common.Traits
 				--FireDelay;
 
 			Recoil = new WDist(Math.Max(0, Recoil.Length - Info.RecoilRecovery.Length));
+		}
 
+		void ITick.Tick(Actor self)
+		{
+			// CONCURRENT: For this to be able to be placed in ConcurrentTick
+			// ScheduleDelayedAction has to be concurrent within clouds
+			// E.g. world have to have concurrent data structures for adding effects
 			for (var i = 0; i < delayedActions.Count; i++)
 			{
 				var x = delayedActions[i];
