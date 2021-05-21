@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using OpenRA.Traits;
 
@@ -10,7 +11,7 @@ namespace OpenRA
 		///
 		/// Should be changed to a mod constant
 		/// </summary>
-		public const int ActorCloudsResDivider = 256;
+		public const int ActorCloudsResDivider = 1024;
 
 		/// <summary>
 		/// Resolution per map cell
@@ -127,17 +128,25 @@ namespace OpenRA
 			// This implementation might be problematic..
 			var radius = aopeRadius.Length;
 			var radiusSquared = aopeRadius.LengthSquared;
+			int x, y;
 
 			// All actors should at least have position (0, 0)
-			var x = centerPosition.X - radius > 0 ? -radius : 0;
-			var minY = centerPosition.Y - radius > 0 ? -radius : 0;
-			for (; x <= radius; x++)
+			var maxCellX = Math.Min(mapCellsWidthMaxIndex, centerPosition.X + radius);
+			var cellX = Math.Max(0, centerPosition.X - radius);
+
+			var maxCellY = Math.Min(mapCellsHeightMaxIndex, centerPosition.Y + radius);
+			var startCellY = Math.Max(0, centerPosition.Y - radius);
+
+			for (; cellX <= maxCellX; cellX++)
 			{
-				var tempXPos = centerPosition.X + x;
+				x = cellX - centerPosition.X;
 				var tempXSquared = x * x;
-				for (var y = minY; y <= radius; y++)
+				for (var cellY = startCellY; cellY <= maxCellY; cellY++)
+				{
+					y = cellY - centerPosition.Y;
 					if (tempXSquared + y * y <= radiusSquared)
-						mapCells[tempXPos][centerPosition.Y + y].Value = 1;
+						mapCells[cellX][cellY].Value = 1;
+				}
 			}
 		}
 
