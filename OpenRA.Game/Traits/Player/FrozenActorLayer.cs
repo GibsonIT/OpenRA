@@ -222,7 +222,7 @@ namespace OpenRA.Traits
 		readonly SpatiallyPartitioned<uint> partitionedFrozenActorIds;
 		readonly HashSet<uint> dirtyFrozenActorIds = new HashSet<uint>();
 
-		ConcurrentBag<FrozenActor> frozenActorsToRemove = new ConcurrentBag<FrozenActor>();
+		readonly ConcurrentBag<FrozenActor> frozenActorsToRemove = new ConcurrentBag<FrozenActor>();
 
 		public FrozenActorLayer(Actor self, FrozenActorLayerInfo info)
 		{
