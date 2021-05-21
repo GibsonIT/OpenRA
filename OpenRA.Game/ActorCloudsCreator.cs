@@ -62,9 +62,9 @@ namespace OpenRA
 		}
 
 		// Can be made faster e.g. by using List pools. Currently a lot of allocations are done each tick
-		public List<List<Actor>> CalculateClouds(IEnumerable<TraitPair<IActorCloudMember>> actorsWithTrait)
+		public List<HashSet<Actor>> CalculateClouds(IEnumerable<TraitPair<IActorCloudMember>> actorsWithTrait)
 		{
-			var clouds = new List<List<Actor>>();
+			var clouds = new List<HashSet<Actor>>();
 			WPos pos;
 
 			// Enter actors and their AoPE in the grid
@@ -100,7 +100,7 @@ namespace OpenRA
 					// Faster to create list here than if check inside function
 					var cloud = SearchAndAddForCloudAt(x, y, new List<Actor>());
 					if (cloud.Count == 0) continue;
-					clouds.Add(cloud);
+					clouds.Add(new HashSet<Actor>(cloud));
 					x++;
 				}
 			}

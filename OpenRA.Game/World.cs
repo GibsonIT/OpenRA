@@ -136,7 +136,7 @@ namespace OpenRA
 
 		readonly GameInformation gameInfo;
 		ActorCloudsCreator actorCloudsCreator;
-		List<Actor> worldPlayerCloud;
+		HashSet<Actor> worldPlayerCloud;
 
 		// Hide the OrderManager from mod code
 		public void IssueOrder(Order o) { OrderManager.IssueOrder(o); }
@@ -285,7 +285,7 @@ namespace OpenRA
 			TraitDict.EnsureExistence<IConcurrentTick>();
 
 			actorCloudsCreator = new ActorCloudsCreator(Map.MapSize.X, Map.MapSize.Y);
-			worldPlayerCloud = new List<Actor>(Players.Select(p => p.PlayerActor))
+			worldPlayerCloud = new HashSet<Actor>(Players.Select(p => p.PlayerActor))
 			{
 				WorldActor
 			};
