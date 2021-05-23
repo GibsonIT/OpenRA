@@ -428,8 +428,10 @@ namespace OpenRA
 			{
 				WorldTick++;
 
-				var clouds = CalculateActorClouds().ToList();
-				SharedRandom.setNumber(clouds.Count);
+				// Calculate actor clouds here
+				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
+				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
+				clouds.Add(worldPlayerCloud);				SharedRandom.setNumber(clouds.Count);
 
 				Parallel.For(0, clouds.Count, i =>
 				{
@@ -454,10 +456,7 @@ namespace OpenRA
 				foreach (var a in actors.Values)
 					a.IdleTick();
 
-				// Calculate actor clouds here
-				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
-				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
-				clouds.Add(worldPlayerCloud);
+
 
 				Console.WriteLine($"We have = {clouds.Count - 1} clouds this tick {WorldTick}");
 
