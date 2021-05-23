@@ -11,6 +11,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using ConcurrentCollections;
 using OpenRA.Primitives;
 using OpenRA.Traits;
 
@@ -28,7 +30,7 @@ namespace OpenRA.Mods.Common.Traits
 
 	public class RadarPings : ITick
 	{
-		public readonly List<RadarPing> Pings = new List<RadarPing>();
+		public readonly ConcurrentHashSet<RadarPing> Pings = new ConcurrentHashSet<RadarPing>();
 		readonly RadarPingsInfo info;
 
 		public WPos? LastPingPosition;
@@ -42,7 +44,7 @@ namespace OpenRA.Mods.Common.Traits
 		{
 			foreach (var ping in Pings.ToArray())
 				if (!ping.Tick())
-					Pings.Remove(ping);
+					Pings.TryRemove(ping);
 		}
 
 		public RadarPing Add(Func<bool> isVisible, WPos position, Color color, int duration)
@@ -60,7 +62,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public void Remove(RadarPing ping)
 		{
-			Pings.Remove(ping);
+			Pings.TryRemove(ping);
 		}
 	}
 
@@ -96,7 +98,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		public bool Tick()
 		{
-			if (++tick == Duration)
+			if (++tick >= Duration)
 				return false;
 
 			radius = Math.Max(radius - ShrinkSpeed, ToRadius);

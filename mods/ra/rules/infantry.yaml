@@ -1,5 +1,7 @@
 E1:
 	Inherits: ^Soldier
+    ActorCloudMember:
+        AopeRadius: 5120
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
 	Buildable:
 		Queue: Infantry

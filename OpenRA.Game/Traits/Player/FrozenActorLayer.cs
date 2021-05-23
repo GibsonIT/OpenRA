@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using OpenRA.Graphics;
@@ -206,7 +207,7 @@ namespace OpenRA.Traits
 		}
 	}
 
-	public class FrozenActorLayer : IRender, ITick, ISync
+	public class FrozenActorLayer : IRender, ITick, ISync, IConcurrentTick
 	{
 		[Sync]
 		public int VisibilityHash;
@@ -220,6 +221,8 @@ namespace OpenRA.Traits
 		readonly Dictionary<uint, FrozenActor> frozenActorsById;
 		readonly SpatiallyPartitioned<uint> partitionedFrozenActorIds;
 		readonly HashSet<uint> dirtyFrozenActorIds = new HashSet<uint>();
+
+		readonly ConcurrentBag<FrozenActor> frozenActorsToRemove = new ConcurrentBag<FrozenActor>();
 
 		public FrozenActorLayer(Actor self, FrozenActorLayerInfo info)
 		{
@@ -243,9 +246,19 @@ namespace OpenRA.Traits
 
 		public void Remove(FrozenActor fa)
 		{
-			partitionedFrozenActorIds.Remove(fa.ID);
-			world.ScreenMap.Remove(owner, fa);
-			frozenActorsById.Remove(fa.ID);
+			frozenActorsToRemove.Add(fa);
+		}
+
+		void RemoveList()
+		{
+			foreach (var fa in frozenActorsToRemove)
+			{
+				partitionedFrozenActorIds.Remove(fa.ID);
+				world.ScreenMap.Remove(owner, fa);
+				frozenActorsById.Remove(fa.ID);
+			}
+
+			frozenActorsToRemove.Clear();
 		}
 
 		Rectangle FootprintBounds(FrozenActor fa)
@@ -273,7 +286,11 @@ namespace OpenRA.Traits
 
 		void ITick.Tick(Actor self)
 		{
-			var frozenActorsToRemove = new List<FrozenActor>();
+			RemoveList();
+		}
+
+		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		{
 			VisibilityHash = 0;
 			FrozenHash = 0;
 
@@ -295,9 +312,6 @@ namespace OpenRA.Traits
 			}
 
 			dirtyFrozenActorIds.Clear();
-
-			foreach (var fa in frozenActorsToRemove)
-				Remove(fa);
 		}
 
 		public virtual IEnumerable<IRenderable> Render(Actor self, WorldRenderer wr)

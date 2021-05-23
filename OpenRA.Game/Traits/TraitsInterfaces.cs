@@ -114,6 +114,8 @@ namespace OpenRA.Traits
 	[RequireExplicitImplementation]
 	public interface ITick { void Tick(Actor self); }
 	[RequireExplicitImplementation]
+	public interface IConcurrentTick { void ConcurrentTick(Actor self, int cloudId); }
+	[RequireExplicitImplementation]
 	public interface ITickRender { void TickRender(WorldRenderer wr, Actor self); }
 	public interface IRender
 	{
@@ -409,7 +411,12 @@ namespace OpenRA.Traits
 	public interface INotifyBecomingIdle { void OnBecomingIdle(Actor self); }
 
 	[RequireExplicitImplementation]
-	public interface INotifyIdle { void TickIdle(Actor self); }
+	public interface INotifyIdle
+	{
+		void TickIdle(Actor self);
+
+		void TickIdleConcurrent(Actor self, int cloudId);
+	}
 
 	public interface IRenderAboveWorld { void RenderAboveWorld(Actor self, WorldRenderer wr); }
 	public interface IRenderShroud { void RenderShroud(WorldRenderer wr); }
@@ -603,5 +610,14 @@ namespace OpenRA.Traits
 	public interface IObservesVariables
 	{
 		IEnumerable<VariableObserver> GetVariableObservers();
+	}
+
+	public interface IActorCloudMember
+	{
+		bool UseRadius();
+		WDist GetAopeRadius();
+		WPos GetActorCenterPosition();
+		WPos GetActorInitTopLeftPosition();
+		WVec GetAopeDimensions();
 	}
 }

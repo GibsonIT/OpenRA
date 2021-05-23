@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace OpenRA.Traits
@@ -64,7 +65,7 @@ namespace OpenRA.Traits
 		public override object Create(ActorInitializer init) { return new Shroud(init.Self, this); }
 	}
 
-	public class Shroud : ISync, INotifyCreated, ITick
+	public class Shroud : ISync, INotifyCreated, IConcurrentTick
 	{
 		public enum SourceType : byte { PassiveVisibility, Shroud, Visibility }
 		public event Action<PPos> OnShroudChanged;
@@ -87,7 +88,7 @@ namespace OpenRA.Traits
 		readonly Map map;
 
 		// Individual shroud modifier sources (type and area)
-		readonly Dictionary<object, ShroudSource> sources = new Dictionary<object, ShroudSource>();
+		readonly ConcurrentDictionary<object, ShroudSource> sources = new ConcurrentDictionary<object, ShroudSource>();
 
 		// Per-cell count of each source type, used to resolve the final cell type
 		readonly ProjectedCellLayer<short> passiveVisibleCount;
@@ -152,7 +153,7 @@ namespace OpenRA.Traits
 				self.World.AddFrameEndTask(w => ExploreAll());
 		}
 
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.ConcurrentTick(Actor self, int actorId)
 		{
 			if (!anyCellTouched)
 				return;
@@ -295,7 +296,7 @@ namespace OpenRA.Traits
 				}
 			}
 
-			sources.Remove(key);
+			sources.TryRemove(key, out _);
 		}
 
 		public void ExploreProjectedCells(World world, IEnumerable<PPos> cells)

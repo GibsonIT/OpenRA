@@ -28,7 +28,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new EnemyWatcher(this); }
 	}
 
-	class EnemyWatcher : ITick
+	class EnemyWatcher : IConcurrentTick
 	{
 		readonly EnemyWatcherInfo info;
 		readonly HashSet<Player> discoveredPlayers;
@@ -50,7 +50,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		// Here self is the player actor
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
 		{
 			// TODO: Make the AI handle such notifications and remove Owner.IsBot from this check
 			// Disable notifications for AI and neutral players (creeps) and for spectators

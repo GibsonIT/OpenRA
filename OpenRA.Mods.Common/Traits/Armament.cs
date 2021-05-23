@@ -103,7 +103,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class Armament : PausableConditionalTrait<ArmamentInfo>, ITick
+	public class Armament : PausableConditionalTrait<ArmamentInfo>, ITick, IConcurrentTick
 	{
 		public readonly WeaponInfo Weapon;
 		public readonly Barrel[] Barrels;
@@ -190,8 +190,13 @@ namespace OpenRA.Mods.Common.Traits
 				conditionToken = self.RevokeCondition(conditionToken);
 		}
 
-		protected virtual void Tick(Actor self)
+		protected virtual void ConcurrentTick(Actor self, int cloudId)
 		{
+			// Concurrency and determinism within a cloud is maintained as long as conditionTokens/States/cache
+			// is only changed from within the cloud itself
+			// The actions in delayedActions have to be deterministic too.
+			// Depending on how those looks they might need to be moved to tick
+
 			// We need to disable conditions if IsTraitDisabled is true, so we have to update conditions before the return below.
 			UpdateCondition(self);
 
@@ -205,7 +210,13 @@ namespace OpenRA.Mods.Common.Traits
 				--FireDelay;
 
 			Recoil = new WDist(Math.Max(0, Recoil.Length - Info.RecoilRecovery.Length));
+		}
 
+		void ITick.Tick(Actor self)
+		{
+			// CONCURRENT: For this to be able to be placed in ConcurrentTick
+			// ScheduleDelayedAction has to be concurrent within clouds
+			// E.g. world have to have concurrent data structures for adding effects
 			for (var i = 0; i < delayedActions.Count; i++)
 			{
 				var x = delayedActions[i];
@@ -217,10 +228,10 @@ namespace OpenRA.Mods.Common.Traits
 			delayedActions.RemoveAll(a => a.Ticks <= 0);
 		}
 
-		void ITick.Tick(Actor self)
+		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
 		{
 			// Split into a protected method to allow subclassing
-			Tick(self);
+			ConcurrentTick(self, cloudId);
 		}
 
 		protected void ScheduleDelayedAction(int t, Action a)

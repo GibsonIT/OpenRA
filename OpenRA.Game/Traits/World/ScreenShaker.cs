@@ -56,7 +56,10 @@ namespace OpenRA.Traits
 
 		public void AddEffect(int time, WPos position, int intensity, float2 multiplier)
 		{
-			shakeEffects.Add(new ShakeEffect { ExpiryTime = ticks + time, Position = position, Intensity = intensity, Multiplier = multiplier });
+			lock (shakeEffects)
+			{
+				shakeEffects.Add(new ShakeEffect { ExpiryTime = ticks + time, Position = position, Intensity = intensity, Multiplier = multiplier });
+			}
 		}
 
 		float2 GetScrollOffset()

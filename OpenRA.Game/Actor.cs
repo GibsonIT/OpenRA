@@ -256,9 +256,11 @@ namespace OpenRA
 				World.Add(this);
 		}
 
+		bool wasIdle = false;
 		public void Tick()
 		{
-			var wasIdle = IsIdle;
+			wasIdle = IsIdle;
+
 			CurrentActivity = ActivityUtils.RunActivity(this, CurrentActivity);
 
 			if (!wasIdle && IsIdle)
@@ -271,9 +273,31 @@ namespace OpenRA
 				// to avoid an 'empty' null tick where the actor will (visibly, if moving) do nothing.
 				CurrentActivity = ActivityUtils.RunActivity(this, CurrentActivity);
 			}
-			else if (wasIdle)
+
+		}
+
+		public void ConcurrentTick(int cloudId)
+		{
+			CurrentActivity?.ConcurrentTick(this, cloudId);
+		}
+
+		public void IdleTick()
+		{
+			if (wasIdle)
 				foreach (var tickIdle in tickIdles)
 					tickIdle.TickIdle(this);
+		}
+
+		public void ConcurrentIdleTick(int cloudId)
+		{
+			if (wasIdle)
+			{
+				foreach (var TickIdle in tickIdles)
+				{
+					TickIdle.TickIdleConcurrent(this, cloudId);
+				}
+			}
+
 		}
 
 		public IEnumerable<IRenderable> Render(WorldRenderer wr)

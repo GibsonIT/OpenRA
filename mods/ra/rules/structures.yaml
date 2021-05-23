@@ -2,6 +2,8 @@ TENT:
 	Inherits: ^Building
 	Inherits@shape: ^2x2Shape
 	Inherits@PRIMARY: ^PrimaryBuilding
+    ActorCloudMember:
+        AopeDimensions: 2,3
 	Selectable:
 		Bounds: 48,48
 	HitShape:

@@ -149,6 +149,8 @@ namespace OpenRA.Mods.Common.Traits
 		IEnumerable<AutoTargetPriorityInfo> activeTargetPriorities;
 		int conditionToken = Actor.InvalidConditionToken;
 
+		Target nextTarget;
+
 		public void SetStance(Actor self, UnitStance value)
 		{
 			if (stance == value)
@@ -260,14 +262,25 @@ namespace OpenRA.Mods.Common.Traits
 			Attack(self, Target.FromActor(Aggressor), allowMove);
 		}
 
+
 		void INotifyIdle.TickIdle(Actor self)
 		{
 			if (IsTraitDisabled || !Info.ScanOnIdle || Stance < UnitStance.Defend)
 				return;
 
 			var allowMove = allowMovement && Stance > UnitStance.Defend;
+			if (nextTarget.Type != TargetType.Invalid)
+				Attack(self, nextTarget, allowMove);
+		}
+
+		void INotifyIdle.TickIdleConcurrent(Actor self, int cloudId)
+		{
+			if (IsTraitDisabled || !Info.ScanOnIdle || Stance < UnitStance.Defend)
+				return;
+
+			var allowMove = allowMovement && Stance > UnitStance.Defend;
 			var allowTurn = Info.AllowTurning && Stance > UnitStance.HoldFire;
-			ScanAndAttack(self, allowMove, allowTurn);
+			nextTarget = ScanForTarget(self, allowMove, allowTurn, false, cloudId);
 		}
 
 		void ITick.Tick(Actor self)
@@ -279,7 +292,7 @@ namespace OpenRA.Mods.Common.Traits
 				--nextScanTime;
 		}
 
-		public Target ScanForTarget(Actor self, bool allowMove, bool allowTurn, bool ignoreScanInterval = false)
+		public Target ScanForTarget(Actor self, bool allowMove, bool allowTurn,  bool ignoreScanInterval = false, int cloudId = 0)
 		{
 			if ((ignoreScanInterval || nextScanTime <= 0) && ActiveAttackBases.Any())
 			{
@@ -288,7 +301,7 @@ namespace OpenRA.Mods.Common.Traits
 						return Target.Invalid;
 
 				if (!ignoreScanInterval)
-					nextScanTime = self.World.SharedRandom.Next(Info.MinimumScanTimeInterval, Info.MaximumScanTimeInterval);
+					nextScanTime = self.World.SharedRandom.Next(cloudId,Info.MinimumScanTimeInterval, Info.MaximumScanTimeInterval);
 
 				foreach (var ab in ActiveAttackBases)
 				{
