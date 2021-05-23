@@ -64,7 +64,7 @@ namespace OpenRA.Traits
 		public override object Create(ActorInitializer init) { return new Shroud(init.Self, this); }
 	}
 
-	public class Shroud : ISync, INotifyCreated, IConcurrentTick
+	public class Shroud : ISync, INotifyCreated, ITick
 	{
 		public enum SourceType : byte { PassiveVisibility, Shroud, Visibility }
 		public event Action<PPos> OnShroudChanged;
@@ -152,7 +152,7 @@ namespace OpenRA.Traits
 				self.World.AddFrameEndTask(w => ExploreAll());
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int actorId)
+		void ITick.Tick(Actor self)
 		{
 			if (!anyCellTouched)
 				return;

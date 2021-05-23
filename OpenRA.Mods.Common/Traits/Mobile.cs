@@ -147,9 +147,8 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class Mobile : PausableConditionalTrait<MobileInfo>, IIssueOrder, IResolveOrder, IOrderVoice, IPositionable, IMove, ICreationActivity,
-		IFacing, IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove, IActorPreviewInitModifier, INotifyBecomingIdle,
-		ITick, IConcurrentTick
+	public class Mobile : PausableConditionalTrait<MobileInfo>, IIssueOrder, IResolveOrder, IOrderVoice, IPositionable, IMove, ITick, ICreationActivity,
+		IFacing, IDeathActorInitModifier, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyBlockingMove, IActorPreviewInitModifier, INotifyBecomingIdle
 	{
 		readonly Actor self;
 		readonly Lazy<IEnumerable<int>> speedModifiers;
@@ -160,7 +159,6 @@ namespace OpenRA.Mods.Common.Traits
 
 		#region IMove CurrentMovementTypes
 		MovementType movementTypes;
-		MovementType newMovementTypes;
 		public MovementType CurrentMovementTypes
 		{
 			get => movementTypes;
@@ -298,19 +296,14 @@ namespace OpenRA.Mods.Common.Traits
 			base.Created(self);
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		void ITick.Tick(Actor self)
 		{
 			UpdateMovement(self);
 		}
 
-		void ITick.Tick(Actor self)
-		{
-			CurrentMovementTypes = newMovementTypes;
-		}
-
 		public void UpdateMovement(Actor self)
 		{
-			newMovementTypes = MovementType.None;
+			var newMovementTypes = MovementType.None;
 			if ((oldPos - CenterPosition).HorizontalLengthSquared != 0)
 				newMovementTypes |= MovementType.Horizontal;
 
@@ -319,6 +312,8 @@ namespace OpenRA.Mods.Common.Traits
 
 			if (oldFacing != Facing)
 				newMovementTypes |= MovementType.Turn;
+
+			CurrentMovementTypes = newMovementTypes;
 
 			oldPos = CenterPosition;
 			oldFacing = Facing;

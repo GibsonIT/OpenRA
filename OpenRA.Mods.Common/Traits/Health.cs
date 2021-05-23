@@ -49,7 +49,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class Health : IHealth, ISync, IConcurrentTick, INotifyCreated, INotifyOwnerChanged
+	public class Health : IHealth, ISync, ITick, INotifyCreated, INotifyOwnerChanged
 	{
 		public readonly HealthInfo Info;
 		INotifyDamageStateChanged[] notifyDamageStateChanged;
@@ -237,11 +237,7 @@ namespace OpenRA.Mods.Common.Traits
 			InflictDamage(self, attacker, new Damage(MaxHP, damageTypes), true);
 		}
 
-		// CONCURRENT: Currently damage is only done from effects.
-		// Effects are synchronized. If additional units/traits are added that changes this, then the old
-		// concurrent version of this class has to be added back, or preferably a version that uses different
-		// functions depending on how things are executed.
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloud)
+		void ITick.Tick(Actor self)
 		{
 			if (hp >= DisplayHP)
 				DisplayHP = hp;

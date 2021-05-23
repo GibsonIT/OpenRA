@@ -90,7 +90,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new TimeLimitManager(init.Self, this); }
 	}
 
-	public class TimeLimitManager : INotifyTimeLimit, IConcurrentTick, IWorldLoaded
+	public class TimeLimitManager : INotifyTimeLimit, ITick, IWorldLoaded
 	{
 		readonly TimeLimitManagerInfo info;
 		MapOptions mapOptions;
@@ -129,7 +129,7 @@ namespace OpenRA.Mods.Common.Traits
 			}
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int actorId)
+		void ITick.Tick(Actor self)
 		{
 			if (TimeLimit <= 0)
 				return;

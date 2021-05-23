@@ -31,9 +31,14 @@ namespace OpenRA.Mods.Common.Traits
 			self = init.Self;
 			this.info = info;
 
-			var x = self.Location.X * ActorCloudsCreator.ActorCloudsResPerMapCell;
-			var y = self.Location.Y * ActorCloudsCreator.ActorCloudsResPerMapCell;
-			initTopLeft = new WPos(x, y, 0);
+			int x, y;
+
+			if (self.OccupiesSpace != null)
+			{
+				x = self.Location.X * ActorCloudsCreator.ActorCloudsResPerMapCell;
+				y = self.Location.Y * ActorCloudsCreator.ActorCloudsResPerMapCell;
+				initTopLeft = new WPos(x, y, 0);
+			}
 
 			// Use circle aope if radius exists, else use rect aope
 			if (info.AopeRadius != -1)

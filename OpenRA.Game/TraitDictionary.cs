@@ -139,11 +139,6 @@ namespace OpenRA
 			InnerGet<T>().ApplyToAllTimed(action, text);
 		}
 
-		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> actors, string text)
-		{
-			InnerGet<T>().ApplyToSuppliedTimed(action, actors, text);
-		}
-
 		interface ITraitContainer
 		{
 			void Add(Actor actor, object trait);
@@ -156,7 +151,6 @@ namespace OpenRA
 		{
 			readonly List<Actor> actors = new List<Actor>();
 			readonly List<T> traits = new List<T>();
-			readonly Dictionary<string, T> uniqueTraitNames = new Dictionary<string, T>();
 
 			public int Queries { get; private set; }
 
@@ -165,9 +159,6 @@ namespace OpenRA
 				var insertIndex = actors.BinarySearchMany(actor.ActorID + 1);
 				actors.Insert(insertIndex, actor);
 				traits.Insert(insertIndex, (T)trait);
-
-				var name = trait.GetType().Name;
-				uniqueTraitNames.TryAdd(name, (T)trait);
 			}
 
 			public T Get(Actor actor)
@@ -316,29 +307,6 @@ namespace OpenRA
 				var start = Stopwatch.GetTimestamp();
 				for (var i = 0; i < actors.Count; i++)
 				{
-					var actor = actors[i];
-					var trait = traits[i];
-					action(actor, trait);
-					var current = Stopwatch.GetTimestamp();
-					if (current - start > longTickThresholdInStopwatchTicks)
-					{
-						PerfTimer.LogLongTick(start, current, text, trait);
-						start = Stopwatch.GetTimestamp();
-					}
-					else
-						start = current;
-				}
-			}
-
-			public void ApplyToSuppliedTimed(Action<Actor, T> action, ICollection<Actor> filterActors, string text)
-			{
-				var longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
-				var start = Stopwatch.GetTimestamp();
-				for (var i = 0; i < actors.Count; i++)
-				{
-					if (!filterActors.Contains(actors[i]))
-						continue;
-
 					var actor = actors[i];
 					var trait = traits[i];
 					action(actor, trait);

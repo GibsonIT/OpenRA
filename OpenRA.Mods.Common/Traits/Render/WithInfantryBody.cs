@@ -66,7 +66,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		}
 	}
 
-	public class WithInfantryBody : ConditionalTrait<WithInfantryBodyInfo>, INotifyAttack, INotifyIdle, IConcurrentTick
+	public class WithInfantryBody : ConditionalTrait<WithInfantryBodyInfo>, ITick, INotifyAttack, INotifyIdle
 	{
 		readonly IMove move;
 		protected readonly Animation DefaultAnimation;
@@ -167,7 +167,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 
 		void INotifyAttack.Attacking(Actor self, in Target target, Armament a, Barrel barrel) { }
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		void ITick.Tick(Actor self)
 		{
 			Tick(self);
 		}

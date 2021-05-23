@@ -67,7 +67,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override abstract object Create(ActorInitializer init);
 	}
 
-	public abstract class AttackBase : PausableConditionalTrait<AttackBaseInfo>, IConcurrentTick, IIssueOrder, IResolveOrder, IOrderVoice, ISync
+	public abstract class AttackBase : PausableConditionalTrait<AttackBaseInfo>, ITick, IIssueOrder, IResolveOrder, IOrderVoice, ISync
 	{
 		readonly string attackOrderName = "Attack";
 		readonly string forceAttackOrderName = "ForceAttack";
@@ -103,7 +103,7 @@ namespace OpenRA.Mods.Common.Traits
 			base.Created(self);
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		void ITick.Tick(Actor self)
 		{
 			Tick(self);
 		}

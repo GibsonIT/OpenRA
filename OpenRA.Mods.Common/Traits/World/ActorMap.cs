@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new ActorMap(init.World, this); }
 	}
 
-	public class ActorMap : IActorMap, IConcurrentTick, INotifyCreated
+	public class ActorMap : IActorMap, ITick, INotifyCreated
 	{
 		class InfluenceNode
 		{
@@ -423,7 +423,7 @@ namespace OpenRA.Mods.Common.Traits
 				CellUpdated(c.Cell);
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		void ITick.Tick(Actor self)
 		{
 			// Position updates are done in one pass
 			// to ensure consistency during a tick

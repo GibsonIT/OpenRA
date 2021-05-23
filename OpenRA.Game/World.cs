@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using OpenRA.Effects;
@@ -397,6 +398,8 @@ namespace OpenRA
 			Paused = PredictedPaused = paused;
 		}
 
+		static Stopwatch sw = new Stopwatch();
+		static double tempTotal = 0;
 		public void Tick()
 		{
 			if (wasLoadingGameSave && !IsLoadingGameSave)
@@ -428,23 +431,26 @@ namespace OpenRA
 			{
 				WorldTick++;
 
+				{
+					sw.Restart();
+
+					// Calculate actor clouds here
+					var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
+					var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
+					clouds.Add(worldPlayerCloud);
+
+					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					tempTotal += milli;
+					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 10 == 0)
+					{
+						Console.Write($"{clouds.Count},{tempTotal / 10}");
+					}
+				}
+
 				using (new PerfSample("tick_actors"))
 					foreach (var a in actors.Values)
 						a.Tick();
 
-				// Calculate actor clouds here
-				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
-				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
-				clouds.Add(worldPlayerCloud);
-
-				Console.WriteLine($"We have = {clouds.Count - 1} clouds this tick {WorldTick}");
-
-				// First we run all ConcurrentTicks, max one thread for each cloud
-				Parallel.For(0, clouds.Count,
-					i => ApplyToSuppliedActorsWithTraitTimed<IConcurrentTick>((actor, trait) => trait.ConcurrentTick(actor, i), clouds.ElementAt(i), "Trait"));
-
-				// Then we run all "synchronous" ticks. Either things that doesn't support clouds or things from
-				// the concurrent tick that should be finalized synchronously
 				ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
 
 				effects.DoTimed(e => e.Tick(this), "Effect");
@@ -519,11 +525,6 @@ namespace OpenRA
 		public void ApplyToActorsWithTraitTimed<T>(Action<Actor, T> action, string text)
 		{
 			TraitDict.ApplyToActorsWithTraitTimed<T>(action, text);
-		}
-
-		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> filterActors, string text)
-		{
-			TraitDict.ApplyToSuppliedActorsWithTraitTimed<T>(action, filterActors, text);
 		}
 
 		public IEnumerable<Actor> ActorsHavingTrait<T>()
