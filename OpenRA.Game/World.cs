@@ -42,7 +42,7 @@ namespace OpenRA
 		internal readonly OrderManager OrderManager;
 		public Session LobbyInfo => OrderManager.LobbyInfo;
 
-		public readonly MersenneTwister SharedRandom;
+		public readonly MersenneWrapper SharedRandom;
 		public readonly MersenneTwister LocalRandom;
 		public readonly IModelCache ModelCache;
 		public LongBitSet<PlayerBitMask> AllPlayersMask = default(LongBitSet<PlayerBitMask>);
@@ -184,7 +184,7 @@ namespace OpenRA
 			orderGenerator = new UnitOrderGenerator();
 			Map = map;
 			Timestep = orderManager.LobbyInfo.GlobalSettings.Timestep;
-			SharedRandom = new MersenneTwister(orderManager.LobbyInfo.GlobalSettings.RandomSeed);
+			SharedRandom = new MersenneWrapper(orderManager.LobbyInfo.GlobalSettings.RandomSeed);
 			LocalRandom = new MersenneTwister();
 
 			ModelCache = modData.ModelSequenceLoader.CacheModels(map, modData, map.Rules.ModelSequences);
@@ -428,9 +428,31 @@ namespace OpenRA
 			{
 				WorldTick++;
 
+				var clouds = CalculateActorClouds().ToList();
+				SharedRandom.setNumber(clouds.Count);
+
+				Parallel.For(0, clouds.Count, i =>
+				{
+					foreach (var a in clouds.ElementAt(i))
+					{
+						a.ConcurrentTick(i);
+					}
+				});
 				using (new PerfSample("tick_actors"))
+
 					foreach (var a in actors.Values)
 						a.Tick();
+
+				Parallel.For(0, clouds.Count, i =>
+				{
+					foreach (var a in clouds.ElementAt(i))
+					{
+						a.ConcurrentIdleTick(i);
+					}
+				});
+
+				foreach (var a in actors.Values)
+					a.IdleTick();
 
 				// Calculate actor clouds here
 				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();

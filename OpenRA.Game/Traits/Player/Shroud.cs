@@ -10,6 +10,7 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace OpenRA.Traits
@@ -87,7 +88,7 @@ namespace OpenRA.Traits
 		readonly Map map;
 
 		// Individual shroud modifier sources (type and area)
-		readonly Dictionary<object, ShroudSource> sources = new Dictionary<object, ShroudSource>();
+		readonly ConcurrentDictionary<object, ShroudSource> sources = new ConcurrentDictionary<object, ShroudSource>();
 
 		// Per-cell count of each source type, used to resolve the final cell type
 		readonly ProjectedCellLayer<short> passiveVisibleCount;
@@ -295,7 +296,7 @@ namespace OpenRA.Traits
 				}
 			}
 
-			sources.Remove(key);
+			sources.TryRemove(key, out _);
 		}
 
 		public void ExploreProjectedCells(World world, IEnumerable<PPos> cells)

@@ -411,7 +411,12 @@ namespace OpenRA.Traits
 	public interface INotifyBecomingIdle { void OnBecomingIdle(Actor self); }
 
 	[RequireExplicitImplementation]
-	public interface INotifyIdle { void TickIdle(Actor self); }
+	public interface INotifyIdle
+	{
+		void TickIdle(Actor self);
+
+		void TickIdleConcurrent(Actor self, int cloudId);
+	}
 
 	public interface IRenderAboveWorld { void RenderAboveWorld(Actor self, WorldRenderer wr); }
 	public interface IRenderShroud { void RenderShroud(WorldRenderer wr); }
