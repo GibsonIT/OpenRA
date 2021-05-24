@@ -1,5 +1,7 @@
 BADR:
 	Inherits: ^NeutralPlane
+    ActorCloudMember:
+        AopeRadius: 1024
 	ParaDrop:
 		DropRange: 4c0
 		ChuteSound: chute1.aud
@@ -37,6 +39,8 @@ BADR:
 
 BADR.Bomber:
 	Inherits: BADR
+    ActorCloudMember:
+        AopeRadius: 3072
 	-ParaDrop:
 	-Cargo:
 	-MapEditorData:
@@ -51,6 +55,8 @@ BADR.Bomber:
 MIG:
 	Inherits: ^Plane
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 9216
 	Buildable:
 		Queue: Aircraft
 		BuildAtProductionType: Plane
@@ -118,6 +124,8 @@ MIG:
 YAK:
 	Inherits: ^Plane
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 5120
 	Buildable:
 		Queue: Aircraft
 		BuildAtProductionType: Plane
@@ -191,6 +199,8 @@ YAK:
 TRAN:
 	Inherits: ^Helicopter
 	Inherits@CARGOPIPS: ^CargoPips
+    ActorCloudMember:
+        AopeRadius: 1024
 	Buildable:
 		Queue: Aircraft
 		BuildAtProductionType: Helicopter
@@ -245,6 +255,8 @@ TRAN:
 HELI:
 	Inherits: ^Helicopter
 	Inherits@AUTOTARGET: ^AutoTargetAllAssaultMove
+    ActorCloudMember:
+        AopeRadius: 1280
 	Buildable:
 		Queue: Aircraft
 		BuildAtProductionType: Helicopter
@@ -315,6 +327,8 @@ HELI:
 HIND:
 	Inherits: ^Helicopter
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 5120
 	Buildable:
 		Queue: Aircraft
 		BuildAtProductionType: Helicopter
@@ -388,6 +402,8 @@ HIND:
 
 U2:
 	Inherits: ^NeutralPlane
+    ActorCloudMember:
+        AopeRadius: 1024
 	Health:
 		HP: 200000
 	Tooltip:
@@ -418,6 +434,8 @@ U2:
 MH60:
 	Inherits: ^Helicopter
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 5120
 	Buildable:
 		Queue: Aircraft
 		BuildAtProductionType: Helicopter

@@ -1,6 +1,8 @@
 SS:
 	Inherits: ^Ship
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 9216
 	Buildable:
 		Queue: Ship
 		BuildAtProductionType: Submarine
@@ -68,6 +70,8 @@ SS:
 MSUB:
 	Inherits: ^Ship
 	Inherits@AUTOTARGET: ^AutoTargetAllAssaultMove
+    ActorCloudMember:
+        AopeRadius: 20480
 	Buildable:
 		Queue: Ship
 		BuildAtProductionType: Submarine
@@ -139,6 +143,8 @@ MSUB:
 DD:
 	Inherits: ^Ship
 	Inherits@AUTOTARGET: ^AutoTargetAllAssaultMove
+    ActorCloudMember:
+        AopeRadius: 7680
 	Buildable:
 		Queue: Ship
 		BuildAtProductionType: Boat
@@ -191,6 +197,8 @@ DD:
 CA:
 	Inherits: ^Ship
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 20480
 	Buildable:
 		Queue: Ship
 		BuildAtProductionType: Boat
@@ -254,6 +262,8 @@ CA:
 LST:
 	Inherits: ^Ship
 	Inherits@CARGOPIPS: ^CargoPips
+    ActorCloudMember:
+        AopeRadius: 1024
 	Buildable:
 		Queue: Ship
 		BuildPaletteOrder: 10
@@ -293,6 +303,8 @@ LST:
 PT:
 	Inherits: ^Ship
 	Inherits@AUTOTARGET: ^AutoTargetGroundAssaultMove
+    ActorCloudMember:
+        AopeRadius: 5632
 	Buildable:
 		Queue: Ship
 		BuildAtProductionType: Boat
