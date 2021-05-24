@@ -433,28 +433,32 @@ namespace OpenRA
 				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
 				clouds.Add(worldPlayerCloud);				SharedRandom.setNumber(clouds.Count);
 
-				Parallel.For(0, clouds.Count, i =>
-				{
-					foreach (var a in clouds.ElementAt(i))
-					{
-						a.ConcurrentTick(i);
-					}
-				});
 				using (new PerfSample("tick_actors"))
+				{
+
+					Parallel.For(0, clouds.Count, i =>
+					{
+						foreach (var a in clouds.ElementAt(i))
+						{
+							a.ConcurrentTick(i);
+						}
+					});
+
 
 					foreach (var a in actors.Values)
 						a.Tick();
 
-				Parallel.For(0, clouds.Count, i =>
-				{
-					foreach (var a in clouds.ElementAt(i))
+					Parallel.For(0, clouds.Count, i =>
 					{
-						a.ConcurrentIdleTick(i);
-					}
-				});
+						foreach (var a in clouds.ElementAt(i))
+						{
+							a.ConcurrentIdleTick(i);
+						}
+					});
 
-				foreach (var a in actors.Values)
-					a.IdleTick();
+					foreach (var a in actors.Values)
+						a.IdleTick();
+				}
 
 
 
