@@ -55,7 +55,7 @@ namespace OpenRA.Network
 		public readonly ReadOnlyList<ChatLine> ChatCache;
 
 		bool disposed;
-		bool generateSyncReport = false;
+		bool generateSyncReport = true;
 
 		void OutOfSync(int frame)
 		{
@@ -131,7 +131,7 @@ namespace OpenRA.Network
 							return;
 						}
 
-						CheckSync(packet);
+						//CheckSync(packet);
 					}
 					else if (frame == 0)
 						immediatePackets.Add((clientId, packet));

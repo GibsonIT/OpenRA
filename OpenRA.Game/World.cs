@@ -11,6 +11,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using OpenRA.Effects;
@@ -397,6 +398,10 @@ namespace OpenRA
 			Paused = PredictedPaused = paused;
 		}
 
+		static Stopwatch sw = new Stopwatch();
+		static double cloudTempTotal = 0;
+		static double traitsTempTotal = 0;
+		static double activitesTempTotal = 0;
 		public void Tick()
 		{
 			if (wasLoadingGameSave && !IsLoadingGameSave)
@@ -428,22 +433,41 @@ namespace OpenRA
 			{
 				WorldTick++;
 
+				sw.Restart();
+
 				// Calculate actor clouds here
 				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
 				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
 				clouds.Add(worldPlayerCloud);				SharedRandom.setNumber(clouds.Count);
 
+				var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+				cloudTempTotal += milli;
+				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				{
+					Console.Write($"{cloudTempTotal / 100}");
+					cloudTempTotal = 0;
+				}
+
+				sw.Restart();
 				using (new PerfSample("tick_actors"))
 				{
 
-					Parallel.For(0, clouds.Count, i =>
-					{
-						foreach (var a in clouds.ElementAt(i))
-						{
-							a.ConcurrentTick(i);
-						}
-					});
+					// Parallel.For(0, clouds.Count, i =>
+					// {
+					// 	foreach (var a in clouds.ElementAt(i))
+					// 	{
+					// 		a.ConcurrentTick(i);
+					// 	}
+					// });
 
+					for (var Index = 0; Index < clouds.Count; Index++)
+					{
+						var cloud = clouds[Index];
+						foreach (var actor in cloud)
+						{
+							actor.ConcurrentTick(Index);
+						}
+					}
 
 					foreach (var a in actors.Values)
 						a.Tick();
@@ -460,9 +484,15 @@ namespace OpenRA
 						a.IdleTick();
 				}
 
+				milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+				activitesTempTotal += milli;
+				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				{
+					Console.Write($",{activitesTempTotal / 100}");
+					activitesTempTotal = 0;
+				}
 
-
-				Console.WriteLine($"We have = {clouds.Count - 1} clouds this tick {WorldTick}");
+				sw.Restart();
 
 				// First we run all ConcurrentTicks, max one thread for each cloud
 				Parallel.For(0, clouds.Count,
@@ -471,6 +501,14 @@ namespace OpenRA
 				// Then we run all "synchronous" ticks. Either things that doesn't support clouds or things from
 				// the concurrent tick that should be finalized synchronously
 				ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
+
+				milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+				traitsTempTotal += milli;
+				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				{
+					Console.Write($",{traitsTempTotal / 100}");
+					traitsTempTotal = 0;
+				}
 
 				effects.DoTimed(e => e.Tick(this), "Effect");
 			}

@@ -645,8 +645,12 @@ namespace OpenRA
 			}
 		}
 
+		static Stopwatch sw = new Stopwatch();
+		static double tempTotal = 0;
 		static void LogicTick()
 		{
+			sw.Restart();
+
 			PerformDelayedActions();
 
 			if (OrderManager.Connection.ConnectionState != lastConnectionState)
@@ -658,6 +662,14 @@ namespace OpenRA
 			InnerLogicTick(OrderManager);
 			if (worldRenderer != null && OrderManager.World != worldRenderer.World)
 				InnerLogicTick(worldRenderer.World.OrderManager);
+
+			var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+			tempTotal += milli;
+			if (OrderManager?.World?.WorldTick != 0 && OrderManager?.World?.WorldTick % 100 == 0)
+			{
+				Console.WriteLine($",{tempTotal / 100}");
+				tempTotal = 0;
+			}
 		}
 
 		public static void PerformDelayedActions()
