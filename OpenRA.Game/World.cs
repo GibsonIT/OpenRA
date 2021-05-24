@@ -440,13 +440,16 @@ namespace OpenRA
 				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
 				clouds.Add(worldPlayerCloud);				SharedRandom.setNumber(clouds.Count);
 
-				var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
-				cloudTempTotal += milli;
-				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				if (Type != WorldType.Shellmap)
 				{
-					Console.Write($"{cloudTempTotal / 100}");
-					cloudTempTotal = 0;
-					Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					cloudTempTotal += milli;
+					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+					{
+						Console.Write($"{cloudTempTotal / 100}");
+						cloudTempTotal = 0;
+						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					}
 				}
 
 				sw.Restart();
@@ -468,13 +471,16 @@ namespace OpenRA
 						a.IdleTick();
 				}
 
-				milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
-				activitesTempTotal += milli;
-				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				if (Type != WorldType.Shellmap)
 				{
-					Console.Write($",{activitesTempTotal / 100}");
-					activitesTempTotal = 0;
-					Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					activitesTempTotal += milli;
+					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+					{
+						Console.Write($",{activitesTempTotal / 100}");
+						activitesTempTotal = 0;
+						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					}
 				}
 
 				sw.Restart();
@@ -487,13 +493,16 @@ namespace OpenRA
 				// the concurrent tick that should be finalized synchronously
 				ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
 
-				milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
-				traitsTempTotal += milli;
-				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				if (Type != WorldType.Shellmap)
 				{
-					Console.Write($",{traitsTempTotal / 100}");
-					traitsTempTotal = 0;
-					Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					traitsTempTotal += milli;
+					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+					{
+						Console.Write($",{traitsTempTotal / 100}");
+						traitsTempTotal = 0;
+						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					}
 				}
 
 				effects.DoTimed(e => e.Tick(this), "Effect");
