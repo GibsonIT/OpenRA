@@ -111,13 +111,7 @@ namespace OpenRA.Activities
 			// We must always let the child finish on its own before continuing.
 			if (ChildHasPriority)
 			{
-				lastRun = TickChild(self);
-				if (lastRun)
-				{
-					if (!finishing) ConcurrentTick(self, 0);
-					lastRun &= (finishing || Tick(self));
-				}
-
+				lastRun = TickChild(self) && (finishing || Tick(self));
 				finishing |= lastRun;
 			}
 

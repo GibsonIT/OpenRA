@@ -446,28 +446,12 @@ namespace OpenRA
 				{
 					Console.Write($"{cloudTempTotal / 100}");
 					cloudTempTotal = 0;
+					Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
 				}
 
 				sw.Restart();
 				using (new PerfSample("tick_actors"))
 				{
-
-					// Parallel.For(0, clouds.Count, i =>
-					// {
-					// 	foreach (var a in clouds.ElementAt(i))
-					// 	{
-					// 		a.ConcurrentTick(i);
-					// 	}
-					// });
-
-					for (var Index = 0; Index < clouds.Count; Index++)
-					{
-						var cloud = clouds[Index];
-						foreach (var actor in cloud)
-						{
-							actor.ConcurrentTick(Index);
-						}
-					}
 
 					foreach (var a in actors.Values)
 						a.Tick();
@@ -490,6 +474,7 @@ namespace OpenRA
 				{
 					Console.Write($",{activitesTempTotal / 100}");
 					activitesTempTotal = 0;
+					Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
 				}
 
 				sw.Restart();
@@ -508,6 +493,7 @@ namespace OpenRA
 				{
 					Console.Write($",{traitsTempTotal / 100}");
 					traitsTempTotal = 0;
+					Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
 				}
 
 				effects.DoTimed(e => e.Tick(this), "Effect");

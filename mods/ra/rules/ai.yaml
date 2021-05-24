@@ -9,3 +9,6 @@ Player:
 		RequiresCondition: enable-normal-ai
 		UnitsToBuild:
 			e1: 15
+    SquadManagerBotModule@normal:
+        RequiresCondition: enable-normal-ai
+        SquadSize: 40
