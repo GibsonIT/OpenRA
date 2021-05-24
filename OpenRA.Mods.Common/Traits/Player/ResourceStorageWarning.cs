@@ -29,7 +29,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new ResourceStorageWarning(init.Self, this); }
 	}
 
-	public class ResourceStorageWarning : IConcurrentTick
+	public class ResourceStorageWarning : ITick
 	{
 		readonly ResourceStorageWarningInfo info;
 		readonly PlayerResources resources;
@@ -42,7 +42,7 @@ namespace OpenRA.Mods.Common.Traits
 			resources = self.Trait<PlayerResources>();
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int actorId)
+		void ITick.Tick(Actor self)
 		{
 			if (--nextSiloAdviceTime <= 0)
 			{

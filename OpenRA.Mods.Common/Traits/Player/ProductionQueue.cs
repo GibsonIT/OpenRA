@@ -97,7 +97,7 @@ namespace OpenRA.Mods.Common.Traits
 		}
 	}
 
-	public class ProductionQueue : IResolveOrder, ITechTreeElement, INotifyOwnerChanged, INotifyKilled, INotifySold, ISync, INotifyTransform, INotifyCreated, IConcurrentTick
+	public class ProductionQueue : IResolveOrder, ITick, ITechTreeElement, INotifyOwnerChanged, INotifyKilled, INotifySold, ISync, INotifyTransform, INotifyCreated
 	{
 		public readonly ProductionQueueInfo Info;
 		readonly Actor self;
@@ -276,7 +276,7 @@ namespace OpenRA.Mods.Common.Traits
 			return ps.Buildable || developerMode.AllTech;
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		void ITick.Tick(Actor self)
 		{
 			Tick(self);
 		}

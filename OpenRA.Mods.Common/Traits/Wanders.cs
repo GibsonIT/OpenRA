@@ -71,15 +71,7 @@ namespace OpenRA.Mods.Common.Traits
 			OnBecomingIdle(self);
 		}
 
-		CPos? targetCell;
 		protected virtual void TickIdle(Actor self)
-		{
-			if (targetCell.HasValue)
-				DoAction(self, targetCell.Value);
-			targetCell = null;
-		}
-
-		void INotifyIdle.TickIdleConcurrent(Actor self, int cloudId)
 		{
 			if (IsTraitDisabled)
 				return;
@@ -87,7 +79,9 @@ namespace OpenRA.Mods.Common.Traits
 			if (--countdown > 0)
 				return;
 
-			targetCell = PickTargetLocation();
+			var targetCell = PickTargetLocation();
+			if (targetCell.HasValue)
+				DoAction(self, targetCell.Value);
 		}
 
 		void INotifyIdle.TickIdle(Actor self)

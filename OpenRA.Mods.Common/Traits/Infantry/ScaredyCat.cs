@@ -94,11 +94,6 @@ namespace OpenRA.Mods.Common.Traits
 				self.QueueActivity(false, mobile.MoveTo(cell.Value, 0));
 		}
 
-		public void TickIdleConcurrent(Actor self, int cloudId)
-		{
-			;
-		}
-
 		void INotifyDamage.Damaged(Actor self, AttackInfo e)
 		{
 			if (e.Damage.Value > 0 && self.World.SharedRandom.Next(100) < info.PanicChance)

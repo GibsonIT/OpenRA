@@ -127,11 +127,6 @@ namespace OpenRA.Mods.Cnc.Traits
 			}
 		}
 
-		public void TickIdleConcurrent(Actor self, int cloudId)
-		{
-			;
-		}
-
 		int IDamageModifier.GetDamageModifier(Actor attacker, Damage damage)
 		{
 			return state == PopupState.Closed ? info.ClosedDamageMultiplier : 100;

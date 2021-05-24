@@ -12,7 +12,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using ConcurrentCollections;
 using OpenRA.Graphics;
 using OpenRA.Primitives;
 using OpenRA.Support;
@@ -151,7 +150,7 @@ namespace OpenRA.Mods.Common.Traits
 
 		readonly LocomotorInfo.TerrainInfo[] terrainInfos;
 		readonly World world;
-		readonly ConcurrentHashSet<CPos> dirtyCells = new ConcurrentHashSet<CPos>();
+		readonly HashSet<CPos> dirtyCells = new HashSet<CPos>();
 
 		IActorMap actorMap;
 		bool sharesCell;
@@ -404,7 +403,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (dirtyCells.Contains(cell))
 			{
 				UpdateCellBlocking(cell);
-				dirtyCells.TryRemove(cell);
+				dirtyCells.Remove(cell);
 			}
 
 			var cache = cell.Layer == 0 ? blockingCache : customLayerBlockingCache[cell.Layer];

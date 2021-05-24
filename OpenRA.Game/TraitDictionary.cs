@@ -10,7 +10,6 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -46,7 +45,7 @@ namespace OpenRA
 		static readonly Func<Type, ITraitContainer> CreateTraitContainer = t =>
 			(ITraitContainer)typeof(TraitContainer<>).MakeGenericType(t).GetConstructor(Type.EmptyTypes).Invoke(null);
 
-		readonly ConcurrentDictionary<Type, ITraitContainer> traits = new ConcurrentDictionary<Type, ITraitContainer>();
+		readonly Dictionary<Type, ITraitContainer> traits = new Dictionary<Type, ITraitContainer>();
 
 		ITraitContainer InnerGet(Type t)
 		{
@@ -84,11 +83,6 @@ namespace OpenRA
 		{
 			if (actor.Disposed)
 				throw new InvalidOperationException("Attempted to get trait from destroyed object ({0})".F(actor));
-		}
-
-		public void EnsureExistence<T>()
-		{
-			InnerGet<T>();
 		}
 
 		public T Get<T>(Actor actor)
@@ -140,11 +134,6 @@ namespace OpenRA
 			InnerGet<T>().ApplyToAllTimed(action, text);
 		}
 
-		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> actors, string text)
-		{
-			InnerGet<T>().ApplyToSuppliedTimed(action, actors, text);
-		}
-
 		interface ITraitContainer
 		{
 			void Add(Actor actor, object trait);
@@ -157,7 +146,6 @@ namespace OpenRA
 		{
 			readonly List<Actor> actors = new List<Actor>();
 			readonly List<T> traits = new List<T>();
-			readonly Dictionary<string, T> uniqueTraitNames = new Dictionary<string, T>();
 
 			public int Queries { get; private set; }
 
@@ -166,9 +154,6 @@ namespace OpenRA
 				var insertIndex = actors.BinarySearchMany(actor.ActorID + 1);
 				actors.Insert(insertIndex, actor);
 				traits.Insert(insertIndex, (T)trait);
-
-				var name = trait.GetType().Name;
-				uniqueTraitNames.TryAdd(name, (T)trait);
 			}
 
 			public T Get(Actor actor)
@@ -317,29 +302,6 @@ namespace OpenRA
 				var start = Stopwatch.GetTimestamp();
 				for (var i = 0; i < actors.Count; i++)
 				{
-					var actor = actors[i];
-					var trait = traits[i];
-					action(actor, trait);
-					var current = Stopwatch.GetTimestamp();
-					if (current - start > longTickThresholdInStopwatchTicks)
-					{
-						PerfTimer.LogLongTick(start, current, text, trait);
-						start = Stopwatch.GetTimestamp();
-					}
-					else
-						start = current;
-				}
-			}
-
-			public void ApplyToSuppliedTimed(Action<Actor, T> action, ICollection<Actor> filterActors, string text)
-			{
-				var longTickThresholdInStopwatchTicks = PerfTimer.LongTickThresholdInStopwatchTicks;
-				var start = Stopwatch.GetTimestamp();
-				for (var i = 0; i < actors.Count; i++)
-				{
-					if (!filterActors.Contains(actors[i]))
-						continue;
-
 					var actor = actors[i];
 					var trait = traits[i];
 					action(actor, trait);

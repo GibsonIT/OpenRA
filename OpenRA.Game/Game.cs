@@ -646,7 +646,7 @@ namespace OpenRA
 		}
 
 		static Stopwatch sw = new Stopwatch();
-		static double tempTotal = 0;
+		public static double tempTotal = 0;
 		static void LogicTick()
 		{
 			sw.Restart();
@@ -662,6 +662,9 @@ namespace OpenRA
 			InnerLogicTick(OrderManager);
 			if (worldRenderer != null && OrderManager.World != worldRenderer.World)
 				InnerLogicTick(worldRenderer.World.OrderManager);
+
+			if (OrderManager?.World?.Type == WorldType.Shellmap)
+				return;
 
 			var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
 			tempTotal += milli;

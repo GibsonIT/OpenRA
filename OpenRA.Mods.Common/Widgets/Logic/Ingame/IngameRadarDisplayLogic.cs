@@ -22,7 +22,7 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 		[ObjectCreator.UseCtor]
 		public IngameRadarDisplayLogic(Widget widget, World world)
 		{
-			var radarEnabled = true;
+			var radarEnabled = false;
 			var cachedRadarEnabled = false;
 			var blockColor = Color.Transparent;
 			var radar = widget.Get<RadarWidget>("RADAR_MINIMAP");
@@ -32,9 +32,9 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			var ticker = widget.Get<LogicTickerWidget>("RADAR_TICKER");
 			ticker.OnTick = () =>
 			{
-				// radarEnabled = devMode.DisableShroud || world.ActorsHavingTrait<ProvidesRadar>(r => !r.IsTraitDisabled)
-				// 	.Any(a => a.Owner == world.LocalPlayer);
-				radarEnabled = true;
+				radarEnabled = devMode.DisableShroud || world.ActorsHavingTrait<ProvidesRadar>(r => !r.IsTraitDisabled)
+					.Any(a => a.Owner == world.LocalPlayer);
+
 				if (radarEnabled != cachedRadarEnabled)
 					Game.Sound.PlayNotification(world.Map.Rules, null, "Sounds", radarEnabled ? radar.SoundUp : radar.SoundDown, null);
 				cachedRadarEnabled = radarEnabled;

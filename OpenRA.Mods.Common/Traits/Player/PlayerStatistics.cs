@@ -1,5 +1,4 @@
 #region Copyright & License Information
-
 /*
  * Copyright 2007-2020 The OpenRA Developers (see AUTHORS)
  * This file is part of OpenRA, which is free software. It is made
@@ -8,13 +7,10 @@
  * the License, or (at your option) any later version. For more
  * information, see COPYING.
  */
-
 #endregion
 
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using OpenRA.Graphics;
 using OpenRA.Mods.Common.Traits.Render;
 using OpenRA.Primitives;
@@ -219,122 +215,81 @@ namespace OpenRA.Mods.Common.Traits
 			if (self.Owner.WinState != WinState.Undefined)
 				return;
 
-			var building = self.Info.HasTraitInfo<BuildingInfo>();
-			var positionable = self.Info.HasTraitInfo<IPositionableInfo>();
-
 			var attackerStats = e.Attacker.Owner.PlayerActor.Trait<PlayerStatistics>();
-
-			// Update for attacker
-			lock (attackerStats)
+			if (self.Info.HasTraitInfo<BuildingInfo>())
 			{
-				if (building)
-				{
-					attackerStats.BuildingsKilled++;
-				}
-				else if (positionable)
-				{
-					attackerStats.UnitsKilled++;
-				}
-
-				attackerStats.KillsCost += cost;
+				attackerStats.BuildingsKilled++;
+				playerStats.BuildingsDead++;
+			}
+			else if (self.Info.HasTraitInfo<IPositionableInfo>())
+			{
+				attackerStats.UnitsKilled++;
+				playerStats.UnitsDead++;
 			}
 
-			// Update for current player
-			lock (playerStats)
+			attackerStats.KillsCost += cost;
+			playerStats.DeathsCost += cost;
+			if (includedInArmyValue)
 			{
-				if (building)
-				{
-					playerStats.BuildingsDead++;
-				}
-				else if (positionable)
-				{
-					playerStats.UnitsDead++;
-				}
+				playerStats.ArmyValue -= cost;
+				includedInArmyValue = false;
+				playerStats.Units[actorName].Count--;
+			}
 
-				playerStats.DeathsCost += cost;
-				if (includedInArmyValue)
-				{
-					playerStats.ArmyValue -= cost;
-					includedInArmyValue = false;
-					playerStats.Units[actorName].Count--;
-				}
-
-				if (includedInAssetsValue)
-				{
-					playerStats.AssetsValue -= cost;
-					includedInAssetsValue = false;
-				}
+			if (includedInAssetsValue)
+			{
+				playerStats.AssetsValue -= cost;
+				includedInAssetsValue = false;
 			}
 		}
 
 		void INotifyCreated.Created(Actor self)
 		{
-			lock (playerStats)
+			includedInArmyValue = info.AddToArmyValue;
+			if (includedInArmyValue)
 			{
-				includedInArmyValue = info.AddToArmyValue;
-				if (includedInArmyValue)
-				{
-					playerStats.ArmyValue += cost;
-					playerStats.Units[actorName].Count++;
-				}
-
-				includedInAssetsValue = info.AddToAssetsValue;
-				if (includedInAssetsValue)
-					playerStats.AssetsValue += cost;
+				playerStats.ArmyValue += cost;
+				playerStats.Units[actorName].Count++;
 			}
+
+			includedInAssetsValue = info.AddToAssetsValue;
+			if (includedInAssetsValue)
+				playerStats.AssetsValue += cost;
 		}
 
 		void INotifyOwnerChanged.OnOwnerChanged(Actor self, Player oldOwner, Player newOwner)
 		{
 			var newOwnerStats = newOwner.PlayerActor.Trait<PlayerStatistics>();
-			lock (newOwnerStats)
+			if (includedInArmyValue)
 			{
-				if (includedInArmyValue)
-				{
-					newOwnerStats.ArmyValue += cost;
-					newOwnerStats.Units[actorName].Count++;
-				}
-
-				if (includedInAssetsValue)
-				{
-					newOwnerStats.AssetsValue += cost;
-				}
+				playerStats.ArmyValue -= cost;
+				newOwnerStats.ArmyValue += cost;
+				playerStats.Units[actorName].Count--;
+				newOwnerStats.Units[actorName].Count++;
 			}
 
-			// Update current player
-			lock (playerStats)
+			if (includedInAssetsValue)
 			{
-				if (includedInArmyValue)
-				{
-					playerStats.ArmyValue -= cost;
-					playerStats.Units[actorName].Count--;
-				}
-
-				if (includedInAssetsValue)
-				{
-					playerStats.AssetsValue -= cost;
-				}
-
-				playerStats = newOwnerStats;
+				playerStats.AssetsValue -= cost;
+				newOwnerStats.AssetsValue += cost;
 			}
+
+			playerStats = newOwnerStats;
 		}
 
 		void INotifyActorDisposing.Disposing(Actor self)
 		{
-			lock (playerStats)
+			if (includedInArmyValue)
 			{
-				if (includedInArmyValue)
-				{
-					playerStats.ArmyValue -= cost;
-					includedInArmyValue = false;
-					playerStats.Units[actorName].Count--;
-				}
+				playerStats.ArmyValue -= cost;
+				includedInArmyValue = false;
+				playerStats.Units[actorName].Count--;
+			}
 
-				if (includedInAssetsValue)
-				{
-					playerStats.AssetsValue -= cost;
-					includedInAssetsValue = false;
-				}
+			if (includedInAssetsValue)
+			{
+				playerStats.AssetsValue -= cost;
+				includedInAssetsValue = false;
 			}
 		}
 	}

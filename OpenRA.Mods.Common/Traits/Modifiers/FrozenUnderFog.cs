@@ -26,7 +26,7 @@ namespace OpenRA.Mods.Common.Traits
 		public override object Create(ActorInitializer init) { return new FrozenUnderFog(init, this); }
 	}
 
-	public class FrozenUnderFog : ICreatesFrozenActors, IRenderModifier, IDefaultVisibility, IConcurrentTick, ITickRender, ISync, INotifyCreated, INotifyOwnerChanged, INotifyActorDisposing
+	public class FrozenUnderFog : ICreatesFrozenActors, IRenderModifier, IDefaultVisibility, ITick, ITickRender, ISync, INotifyCreated, INotifyOwnerChanged, INotifyActorDisposing
 	{
 		[Sync]
 		public int VisibilityHash;
@@ -109,10 +109,7 @@ namespace OpenRA.Mods.Common.Traits
 			return info.AlwaysVisibleRelationships.HasRelationship(relationship) || IsVisibleInner(self, byPlayer);
 		}
 
-		// CONCURRENT: Very unclear if this can actually work. Calls same file as the FrozenActorLayer already edits
-		// from the player-world cloud. Couldn't find any overlap though in the variables that are edited
-		// If desync problems occurs, change this back to ITick
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudId)
+		void ITick.Tick(Actor self)
 		{
 			if (self.Disposed)
 				return;

@@ -13,7 +13,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Threading.Tasks;
 using OpenRA.Effects;
 using OpenRA.FileFormats;
 using OpenRA.Graphics;
@@ -43,7 +42,7 @@ namespace OpenRA
 		internal readonly OrderManager OrderManager;
 		public Session LobbyInfo => OrderManager.LobbyInfo;
 
-		public readonly MersenneWrapper SharedRandom;
+		public readonly MersenneTwister SharedRandom;
 		public readonly MersenneTwister LocalRandom;
 		public readonly IModelCache ModelCache;
 		public LongBitSet<PlayerBitMask> AllPlayersMask = default(LongBitSet<PlayerBitMask>);
@@ -136,8 +135,6 @@ namespace OpenRA
 		public readonly IValidateOrder[] OrderValidators;
 
 		readonly GameInformation gameInfo;
-		ActorCloudsCreator actorCloudsCreator;
-		HashSet<Actor> worldPlayerCloud;
 
 		// Hide the OrderManager from mod code
 		public void IssueOrder(Order o) { OrderManager.IssueOrder(o); }
@@ -185,7 +182,7 @@ namespace OpenRA
 			orderGenerator = new UnitOrderGenerator();
 			Map = map;
 			Timestep = orderManager.LobbyInfo.GlobalSettings.Timestep;
-			SharedRandom = new MersenneWrapper(orderManager.LobbyInfo.GlobalSettings.RandomSeed);
+			SharedRandom = new MersenneTwister(orderManager.LobbyInfo.GlobalSettings.RandomSeed);
 			LocalRandom = new MersenneTwister();
 
 			ModelCache = modData.ModelSequenceLoader.CacheModels(map, modData, map.Rules.ModelSequences);
@@ -282,14 +279,6 @@ namespace OpenRA
 
 			if (rc != null)
 				rc.Metadata = new ReplayMetadata(gameInfo);
-
-			TraitDict.EnsureExistence<IConcurrentTick>();
-
-			actorCloudsCreator = new ActorCloudsCreator(Map.MapSize.X, Map.MapSize.Y);
-			worldPlayerCloud = new HashSet<Actor>(Players.Select(p => p.PlayerActor))
-			{
-				WorldActor
-			};
 		}
 
 		public void SetWorldOwner(Player p)
@@ -399,7 +388,6 @@ namespace OpenRA
 		}
 
 		static Stopwatch sw = new Stopwatch();
-		static double cloudTempTotal = 0;
 		static double traitsTempTotal = 0;
 		static double activitesTempTotal = 0;
 		public void Tick()
@@ -434,80 +422,38 @@ namespace OpenRA
 				WorldTick++;
 
 				sw.Restart();
-
-				// Calculate actor clouds here
-				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
-				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
-				clouds.Add(worldPlayerCloud);				SharedRandom.setNumber(clouds.Count);
-
-				var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
-				cloudTempTotal += milli;
-				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
-				{
-					Console.Write($"{cloudTempTotal / 100}");
-					cloudTempTotal = 0;
-				}
-
-				sw.Restart();
 				using (new PerfSample("tick_actors"))
 				{
-
-					// Parallel.For(0, clouds.Count, i =>
-					// {
-					// 	foreach (var a in clouds.ElementAt(i))
-					// 	{
-					// 		a.ConcurrentTick(i);
-					// 	}
-					// });
-
-					for (var Index = 0; Index < clouds.Count; Index++)
-					{
-						var cloud = clouds[Index];
-						foreach (var actor in cloud)
-						{
-							actor.ConcurrentTick(Index);
-						}
-					}
-
 					foreach (var a in actors.Values)
 						a.Tick();
-
-					Parallel.For(0, clouds.Count, i =>
-					{
-						foreach (var a in clouds.ElementAt(i))
-						{
-							a.ConcurrentIdleTick(i);
-						}
-					});
-
-					foreach (var a in actors.Values)
-						a.IdleTick();
 				}
 
-				milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
-				activitesTempTotal += milli;
-				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				if (Type != WorldType.Shellmap)
 				{
-					Console.Write($",{activitesTempTotal / 100}");
-					activitesTempTotal = 0;
+					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					activitesTempTotal += milli;
+					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+					{
+						Console.Write($"{activitesTempTotal / 100}");
+						activitesTempTotal = 0;
+						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					}
 				}
 
 				sw.Restart();
 
-				// First we run all ConcurrentTicks, max one thread for each cloud
-				Parallel.For(0, clouds.Count,
-					i => ApplyToSuppliedActorsWithTraitTimed<IConcurrentTick>((actor, trait) => trait.ConcurrentTick(actor, i), clouds.ElementAt(i), "Trait"));
-
-				// Then we run all "synchronous" ticks. Either things that doesn't support clouds or things from
-				// the concurrent tick that should be finalized synchronously
 				ApplyToActorsWithTraitTimed<ITick>((Actor actor, ITick trait) => trait.Tick(actor), "Trait");
 
-				milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
-				traitsTempTotal += milli;
-				if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+				if (Type != WorldType.Shellmap)
 				{
-					Console.Write($",{traitsTempTotal / 100}");
-					traitsTempTotal = 0;
+					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					traitsTempTotal += milli;
+					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
+					{
+						Console.Write($",{traitsTempTotal / 100}");
+						traitsTempTotal = 0;
+						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+					}
 				}
 
 				effects.DoTimed(e => e.Tick(this), "Effect");
@@ -582,11 +528,6 @@ namespace OpenRA
 		public void ApplyToActorsWithTraitTimed<T>(Action<Actor, T> action, string text)
 		{
 			TraitDict.ApplyToActorsWithTraitTimed<T>(action, text);
-		}
-
-		public void ApplyToSuppliedActorsWithTraitTimed<T>(Action<Actor, T> action, ICollection<Actor> filterActors, string text)
-		{
-			TraitDict.ApplyToSuppliedActorsWithTraitTimed<T>(action, filterActors, text);
 		}
 
 		public IEnumerable<Actor> ActorsHavingTrait<T>()

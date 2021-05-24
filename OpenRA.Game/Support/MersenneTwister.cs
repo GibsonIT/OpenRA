@@ -10,7 +10,6 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 
 namespace OpenRA.Support
 {
@@ -84,32 +83,5 @@ namespace OpenRA.Support
 				}
 			}
 		}
-	}
-
-	public class MersenneWrapper : MersenneTwister
-	{
-		List<MersenneTwister> mersenneTwisters = new List<MersenneTwister>();
-
-		public MersenneWrapper(int seed): base(seed)
-		{ }
-
-		public void setNumber(int num)
-		{
-			if (num > mersenneTwisters.Count)
-			{
-				for (int i = mersenneTwisters.Count; i < num; i++)
-				{
-					mersenneTwisters.Add(new MersenneTwister(this.Next()));
-				}
-			}
-		}
-
-		public int Next(int cloudId, int low, int high)
-		{
-			return mersenneTwisters[cloudId].Next(low, high);
-		}
-
-
-
 	}
 }

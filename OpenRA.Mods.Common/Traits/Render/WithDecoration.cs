@@ -37,7 +37,7 @@ namespace OpenRA.Mods.Common.Traits.Render
 		public override object Create(ActorInitializer init) { return new WithDecoration(init.Self, this); }
 	}
 
-	public class WithDecoration : WithDecorationBase<WithDecorationInfo>, IConcurrentTick
+	public class WithDecoration : WithDecorationBase<WithDecorationInfo>, ITick
 	{
 		protected Animation anim;
 		readonly string image;
@@ -66,6 +66,6 @@ namespace OpenRA.Mods.Common.Traits.Render
 			};
 		}
 
-		void IConcurrentTick.ConcurrentTick(Actor self, int cloudid) { anim.Tick(); }
+		void ITick.Tick(Actor self) { anim.Tick(); }
 	}
 }
