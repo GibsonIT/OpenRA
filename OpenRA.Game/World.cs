@@ -398,12 +398,18 @@ namespace OpenRA
 			Paused = PredictedPaused = paused;
 		}
 
-		static Stopwatch sw = new Stopwatch();
-		static double cloudTempTotal = 0;
-		static double traitsTempTotal = 0;
-		static double activitesTempTotal = 0;
+		Stopwatch swTotal = new Stopwatch();
+		double tempTotal = 0;
+
+		Stopwatch sw = new Stopwatch();
+		int cloudNumberTempTotal = 0;
+		double cloudTempTotal = 0;
+		double traitsTempTotal = 0;
+		double activitesTempTotal = 0;
 		public void Tick()
 		{
+			swTotal.Restart();
+
 			if (wasLoadingGameSave && !IsLoadingGameSave)
 			{
 				foreach (var kv in gameSaveTraitData)
@@ -438,17 +444,20 @@ namespace OpenRA
 				// Calculate actor clouds here
 				var traitPairs = TraitDict.ActorsWithTrait<IActorCloudMember>();
 				var clouds = actorCloudsCreator.CalculateClouds(traitPairs);
-				clouds.Add(worldPlayerCloud);				SharedRandom.setNumber(clouds.Count);
+				clouds.Add(worldPlayerCloud);
+				SharedRandom.setNumber(clouds.Count);
 
 				if (Type != WorldType.Shellmap)
 				{
 					var milli = (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+					cloudNumberTempTotal += clouds.Count;
 					cloudTempTotal += milli;
 					if (OrderManager.World.WorldTick != 0 && OrderManager.World.WorldTick % 100 == 0)
 					{
-						Console.Write($"{cloudTempTotal / 100}");
+						Console.Write($"{cloudNumberTempTotal / 100.0},{cloudTempTotal / 100}");
 						cloudTempTotal = 0;
-						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+						cloudNumberTempTotal = 0;
+						tempTotal -= ((sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000) - milli;
 					}
 				}
 
@@ -479,7 +488,7 @@ namespace OpenRA
 					{
 						Console.Write($",{activitesTempTotal / 100}");
 						activitesTempTotal = 0;
-						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+						tempTotal -= ((sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000) - milli;
 					}
 				}
 
@@ -501,7 +510,7 @@ namespace OpenRA
 					{
 						Console.Write($",{traitsTempTotal / 100}");
 						traitsTempTotal = 0;
-						Game.tempTotal -= (milli - (sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000);
+						tempTotal -= ((sw.ElapsedTicks / (double) Stopwatch.Frequency) * 1000) - milli;
 					}
 				}
 
@@ -510,6 +519,18 @@ namespace OpenRA
 
 			while (frameEndActions.Count != 0)
 				frameEndActions.Dequeue()(this);
+
+			if (OrderManager?.World?.Type != WorldType.Shellmap)
+			{
+
+				var milli = (swTotal.ElapsedTicks / (double) Stopwatch.Frequency) * 1000;
+				tempTotal += milli;
+				if (OrderManager?.World?.WorldTick != 0 && OrderManager?.World?.WorldTick % 100 == 0)
+				{
+					Console.WriteLine($",{tempTotal / 100}");
+					tempTotal = 0;
+				}
+			}
 		}
 
 		// For things that want to update their render state once per tick, ignoring pause state
